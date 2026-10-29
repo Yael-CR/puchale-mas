@@ -42,3 +42,26 @@ class ProductResponse(BaseModel):
     status: ProductStatus
     created_at: datetime
     updated_at: datetime
+
+
+
+class ProductUpdate(BaseModel):
+    """Campos permitidos al editar un producto propio."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    title: str | None = Field(default=None, min_length=1, max_length=200)
+    description: str | None = None
+    condition: str | None = None
+
+    @field_validator("title")
+    @classmethod
+    def validate_title(cls, value: str | None) -> str | None:
+        if value is None:
+            return value
+
+        value = value.strip()
+        if not value:
+            raise ValueError("El título no puede estar vacío.")
+
+        return value

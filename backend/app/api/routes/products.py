@@ -3,12 +3,19 @@ from typing import Any
 
 from fastapi import APIRouter, Depends, status
 
+
+
+
+
 from app.api.dependencies import AuthenticatedUser, get_current_user
-from app.schemas.product import ProductCreate, ProductResponse
+from app.schemas.product import ProductCreate, ProductResponse, ProductUpdate
+
 from app.services.product_service import (
     create_product,
     get_my_products,
     get_products,
+    publish_product,
+    update_product,
 )
 
 router = APIRouter(prefix="/api/products", tags=["Products"])
@@ -44,5 +51,35 @@ def add_product(
     return create_product(
         product=product,
         seller_id=user.id,
+        db=user.db,
+    )
+
+
+
+@router.patch("/{product_id}/publish", response_model=ProductResponse)
+def publish_my_product(
+    product_id: str,
+    user: AuthenticatedUser = Depends(get_current_user),
+) -> dict[str, Any]:
+    """Publica un producto propio del usuario autenticado."""
+    return publish_product(
+        product_id=product_id,
+        seller_id=user.id,
+        db=user.db,
+    )
+
+
+
+@router.patch("/{product_id}", response_model=ProductResponse)
+def edit_my_product(
+    product_id: str,
+    product: ProductUpdate,
+    user: AuthenticatedUser = Depends(get_current_user),
+) -> dict[str, Any]:
+    """Edita un producto propio del usuario autenticado."""
+    return update_product(
+        product_id=product_id,
+        seller_id=user.id,
+        product=product,
         db=user.db,
     )

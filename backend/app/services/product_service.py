@@ -5,7 +5,7 @@ from fastapi import HTTPException, status
 from supabase import Client
 
 from app.core.supabase import supabase
-from app.schemas.product import ProductCreate
+from app.schemas.product import ProductCreate, ProductUpdate
 
 
 ALLOWED_CREATION_ROLES = {"seller", "admin", "super_admin"}
@@ -140,4 +140,149 @@ def create_product(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="No se pudo validar el permiso o crear el producto.",
+        ) from exc
+
+
+def publish_product(
+    product_id: str,
+    seller_id: str,
+    db: Client,
+) -> dict[str, Any]:
+    """Publica un producto propio que se encuentra en borrador."""
+
+    try:
+        # 1. Verificar que el usuario tenga un rol autorizado.
+        roles_response = (
+            db.table("user_roles")
+            .select("roles(code)")
+            .eq("user_id", seller_id)
+            .execute()
+        )
+
+        role_codes = {
+            item["roles"]["code"]
+            for item in (roles_response.data or [])
+            if item.get("roles") and item["roles"].get("code")
+        }
+
+        if not role_codes.intersection(ALLOWED_CREATION_ROLES):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Tu rol no permite publicar productos.",
+            )
+
+        # 2. Buscar el producto entre los que pertenecen al usuario.
+        product_response = (
+            db.table("products")
+            .select(
+                "id, seller_id, title, description, condition, "
+                "status, created_at, updated_at"
+            )
+            .eq("id", product_id)
+            .eq("seller_id", seller_id)
+            .limit(1)
+            .execute()
+        )
+
+        if not product_response.data:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Producto no encontrado entre tus productos.",
+            )
+
+        product = product_response.data[0]
+
+        if product["status"] != "draft":
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="Solo se pueden publicar productos en borrador.",
+            )
+
+        # 3. Cambiar el estado respetando propietario y estado actual.
+        response = (
+            db.table("products")
+            .update({"status": "published"})
+            .eq("id", product_id)
+            .eq("seller_id", seller_id)
+            .eq("status", "draft")
+            .execute()
+        )
+
+        if not response.data:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="No se pudo publicar. Verifica el estado del producto.",
+            )
+
+        return response.data[0]
+
+    except HTTPException:
+        raise
+
+    except Exception as exc:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="No se pudo publicar el producto.",
+        ) from exc
+
+
+
+
+def update_product(
+    product_id: str,
+    seller_id: str,
+    product: ProductUpdate,
+    db: Client,
+) -> dict[str, Any]:
+    """Actualiza campos permitidos de un producto propio."""
+
+    changes = product.model_dump(exclude_unset=True)
+
+    if not changes:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Debes proporcionar al menos un campo para actualizar.",
+        )
+
+    try:
+        # Verificar que el producto pertenece al usuario.
+        product_response = (
+            db.table("products")
+            .select("id, seller_id, status")
+            .eq("id", product_id)
+            .eq("seller_id", seller_id)
+            .limit(1)
+            .execute()
+        )
+
+        if not product_response.data:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Producto no encontrado entre tus productos.",
+            )
+
+        # Actualizar únicamente los campos enviados.
+        response = (
+            db.table("products")
+            .update(changes)
+            .eq("id", product_id)
+            .eq("seller_id", seller_id)
+            .execute()
+        )
+
+        if not response.data:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="No se pudo actualizar el producto.",
+            )
+
+        return response.data[0]
+
+    except HTTPException:
+        raise
+
+    except Exception as exc:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="No se pudo actualizar el producto.",
         ) from exc
