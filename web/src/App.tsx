@@ -4,33 +4,55 @@ import type { Session } from '@supabase/supabase-js'
 import { supabase } from './lib/supabase'
 import './App.css'
 
+const API_URL = 'http://127.0.0.1:8000'
+
 function App() {
   const [session, setSession] = useState<Session | null>(null)
   const [loading, setLoading] = useState(true)
+
   const [error, setError] = useState('')
   const [securityResult, setSecurityResult] = useState('')
+  const [backendResult, setBackendResult] = useState('')
+
   const [testingSecurity, setTestingSecurity] = useState(false)
+  const [testingBackend, setTestingBackend] = useState(false)
 
   useEffect(() => {
     async function checkSession() {
-      const { data, error } = await supabase.auth.getSession()
+      try {
+        const { data, error } = await supabase.auth.getSession()
 
-      console.log('Sesión inicial:', data.session)
-      console.log('Error al recuperar sesión:', error)
+        if (error) {
+          throw error
+        }
 
-      setSession(data.session)
-      setLoading(false)
+        console.log('Sesión inicial:', data.session)
+
+        setSession(data.session)
+      } catch (err) {
+        setError(
+          err instanceof Error
+            ? err.message
+            : 'No se pudo recuperar la sesión.'
+        )
+      } finally {
+        setLoading(false)
+      }
     }
 
-    checkSession()
+    void checkSession()
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((event, session) => {
+    } = supabase.auth.onAuthStateChange((event, newSession) => {
       console.log('Evento de autenticación:', event)
-      console.log('Sesión recibida:', session)
 
-      setSession(session)
+      setSession(newSession)
+
+      if (!newSession) {
+        setSecurityResult('')
+        setBackendResult('')
+      }
     })
 
     return () => subscription.unsubscribe()
@@ -46,16 +68,21 @@ function App() {
       },
     })
 
-    if (error) setError(error.message)
+    if (error) {
+      setError(error.message)
+    }
   }
 
   async function signOut() {
     setError('')
     setSecurityResult('')
+    setBackendResult('')
 
     const { error } = await supabase.auth.signOut()
 
-    if (error) setError(error.message)
+    if (error) {
+      setError(error.message)
+    }
   }
 
   async function testSecurity() {
@@ -69,7 +96,6 @@ function App() {
       }
 
       // 1. Consultar perfiles visibles según las políticas RLS.
-      // No usamos .single() para distinguir entre cero y una fila.
       const { data: profiles, error: profileError } = await supabase
         .from('profiles')
         .select('id, display_name, avatar_path')
@@ -85,7 +111,7 @@ function App() {
 
       if (!profiles || profiles.length === 0) {
         throw new Error(
-          'No se encontró ningún perfil visible. Hay que comprobar la fila y las políticas RLS.'
+          'No se encontró ningún perfil visible. Comprueba la fila y las políticas RLS.'
         )
       }
 
@@ -104,7 +130,7 @@ function App() {
         )
       }
 
-      // 3. Consultar los roles visibles del usuario autenticado.
+      // 3. Consultar los roles visibles del usuario.
       const { data: roles, error: rolesError } = await supabase
         .from('user_roles')
         .select('roles(code, description)')
@@ -123,7 +149,7 @@ function App() {
           {
             resultado: 'Consultas completadas correctamente',
             perfil: profile,
-            roles: roles,
+            roles,
           },
           null,
           2
@@ -135,6 +161,63 @@ function App() {
       )
     } finally {
       setTestingSecurity(false)
+    }
+  }
+
+  async function testBackendAuth() {
+    setError('')
+    setBackendResult('')
+    setTestingBackend(true)
+
+    try {
+      if (!session?.access_token) {
+        throw new Error(
+          'Debes iniciar sesión con Google antes de probar FastAPI.'
+        )
+      }
+
+      const response = await fetch(`${API_URL}/api/auth/me`, {
+        method: 'GET',
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+          Accept: 'application/json',
+        },
+      })
+
+      const responseText = await response.text()
+
+      let result: unknown
+
+      try {
+        result = responseText ? JSON.parse(responseText) : null
+      } catch {
+        result = { message: responseText }
+      }
+
+      if (!response.ok) {
+        throw new Error(
+          `FastAPI respondió con HTTP ${response.status}: ${JSON.stringify(result)}`
+        )
+      }
+
+      setBackendResult(
+        JSON.stringify(
+          {
+            resultado: 'FastAPI reconoció la sesión de Supabase',
+            respuesta: result,
+          },
+          null,
+          2
+        )
+      )
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : 'No se pudo conectar con FastAPI.'
+      )
+    } finally {
+      setTestingBackend(false)
     }
   }
 
@@ -157,23 +240,51 @@ function App() {
           <p>Correo: {session.user.email}</p>
           <p>UID: {session.user.id}</p>
 
-          <button onClick={testSecurity} disabled={testingSecurity}>
-            {testingSecurity
-              ? 'Comprobando permisos...'
-              : 'Probar perfil y roles'}
-          </button>
-
-          {securityResult && (
-            <pre
-              style={{
-                textAlign: 'left',
-                whiteSpace: 'pre-wrap',
-                overflowWrap: 'anywhere',
-              }}
+          <div>
+            <button
+              onClick={testSecurity}
+              disabled={testingSecurity}
             >
-              {securityResult}
-            </pre>
-          )}
+              {testingSecurity
+                ? 'Comprobando permisos...'
+                : 'Probar perfil y roles'}
+            </button>
+
+            {securityResult && (
+              <pre
+                style={{
+                  textAlign: 'left',
+                  whiteSpace: 'pre-wrap',
+                  overflowWrap: 'anywhere',
+                }}
+              >
+                {securityResult}
+              </pre>
+            )}
+          </div>
+
+          <div>
+            <button
+              onClick={testBackendAuth}
+              disabled={testingBackend}
+            >
+              {testingBackend
+                ? 'Probando FastAPI...'
+                : 'Probar autenticación con FastAPI'}
+            </button>
+
+            {backendResult && (
+              <pre
+                style={{
+                  textAlign: 'left',
+                  whiteSpace: 'pre-wrap',
+                  overflowWrap: 'anywhere',
+                }}
+              >
+                {backendResult}
+              </pre>
+            )}
+          </div>
 
           <button onClick={signOut}>
             Cerrar sesión
