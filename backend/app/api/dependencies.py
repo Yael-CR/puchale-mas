@@ -1,14 +1,24 @@
 
+from dataclasses import dataclass
 from typing import Annotated
 
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+from supabase import Client, create_client
 from supabase_auth.errors import AuthApiError
 
+from app.core.config import SUPABASE_KEY, SUPABASE_URL
 from app.core.supabase import supabase
 
-
 bearer_scheme = HTTPBearer(auto_error=False)
+
+
+@dataclass
+class AuthenticatedUser:
+    id: str
+    email: str | None
+    access_token: str
+    db: Client
 
 
 async def get_current_user(
@@ -16,25 +26,19 @@ async def get_current_user(
         HTTPAuthorizationCredentials | None,
         Depends(bearer_scheme),
     ],
-):
-    if credentials is None:
+) -> AuthenticatedUser:
+    if credentials is None or credentials.scheme.lower() != "bearer":
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Se requiere un token de acceso.",
+            detail="Se requiere un token Bearer válido.",
             headers={"WWW-Authenticate": "Bearer"},
         )
 
-    if credentials.scheme.lower() != "bearer":
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Esquema de autenticación no válido.",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
+    token = credentials.credentials
 
     try:
-        response = supabase.auth.get_user(credentials.credentials)
+        response = supabase.auth.get_user(token)
         user = response.user
-
     except AuthApiError:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -49,4 +53,14 @@ async def get_current_user(
             headers={"WWW-Authenticate": "Bearer"},
         )
 
-    return user
+    # Crear un cliente por solicitud para que las consultas PostgREST
+    # utilicen el JWT de este usuario y respeten sus políticas RLS.
+    user_db = create_client(SUPABASE_URL, SUPABASE_KEY)
+    user_db.postgrest.auth(token)
+
+    return AuthenticatedUser(
+        id=str(user.id),
+        email=user.email,
+        access_token=token,
+        db=user_db,
+    )

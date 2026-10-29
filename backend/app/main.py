@@ -4,7 +4,7 @@ from typing import Any
 from fastapi import Depends, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api.dependencies import get_current_user
+from app.api.dependencies import AuthenticatedUser, get_current_user
 
 app = FastAPI(
     title="Puchale+ API",
@@ -77,8 +77,11 @@ def health_check():
     }
 
 
+
 @app.get("/api/auth/me", tags=["Authentication"])
-def get_authenticated_user(user: Any = Depends(get_current_user)):
+def get_authenticated_user(
+    user: AuthenticatedUser = Depends(get_current_user),
+):
     return {
         "authenticated": True,
         "user": {
@@ -86,6 +89,7 @@ def get_authenticated_user(user: Any = Depends(get_current_user)):
             "email": user.email,
         },
     }
+
 
 
 app.include_router(products_router)
