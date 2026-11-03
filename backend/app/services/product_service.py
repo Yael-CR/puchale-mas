@@ -148,70 +148,18 @@ def publish_product(
     seller_id: str,
     db: Client,
 ) -> dict[str, Any]:
-    """Publica un producto propio que se encuentra en borrador."""
+    """Publica un producto propio mediante una función SQL segura."""
 
     try:
-        # 1. Verificar que el usuario tenga un rol autorizado.
-        roles_response = (
-            db.table("user_roles")
-            .select("roles(code)")
-            .eq("user_id", seller_id)
-            .execute()
-        )
-
-        role_codes = {
-            item["roles"]["code"]
-            for item in (roles_response.data or [])
-            if item.get("roles") and item["roles"].get("code")
-        }
-
-        if not role_codes.intersection(ALLOWED_CREATION_ROLES):
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Tu rol no permite publicar productos.",
-            )
-
-        # 2. Buscar el producto entre los que pertenecen al usuario.
-        product_response = (
-            db.table("products")
-            .select(
-                "id, seller_id, title, description, condition, "
-                "status, created_at, updated_at"
-            )
-            .eq("id", product_id)
-            .eq("seller_id", seller_id)
-            .limit(1)
-            .execute()
-        )
-
-        if not product_response.data:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Producto no encontrado entre tus productos.",
-            )
-
-        product = product_response.data[0]
-
-        if product["status"] != "draft":
-            raise HTTPException(
-                status_code=status.HTTP_409_CONFLICT,
-                detail="Solo se pueden publicar productos en borrador.",
-            )
-
-        # 3. Cambiar el estado respetando propietario y estado actual.
-        response = (
-            db.table("products")
-            .update({"status": "published"})
-            .eq("id", product_id)
-            .eq("seller_id", seller_id)
-            .eq("status", "draft")
-            .execute()
-        )
+        response = db.rpc(
+            "publish_product",
+            {"p_product_id": product_id},
+        ).execute()
 
         if not response.data:
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,
-                detail="No se pudo publicar. Verifica el estado del producto.",
+                detail="No se pudo publicar el producto.",
             )
 
         return response.data[0]
@@ -224,7 +172,6 @@ def publish_product(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="No se pudo publicar el producto.",
         ) from exc
-
 
 
 
@@ -285,4 +232,56 @@ def update_product(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="No se pudo actualizar el producto.",
+        ) from exc
+
+
+
+def archive_product(
+    product_id: str,
+    seller_id: str,
+    db: Client,
+) -> dict[str, Any]:
+    """Archiva un producto propio publicado mediante una función SQL segura."""
+    try:
+        response = db.rpc(
+            "archive_product",
+            {"p_product_id": product_id},
+        ).execute()
+
+        if not response.data:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="No se pudo archivar el producto.",
+            )
+
+        return response.data[0]
+
+    except HTTPException:
+        raise
+
+    except Exception as exc:
+        error_code = getattr(exc, "code", None)
+        error_message = str(exc).lower()
+
+        if (
+            error_code == "42501"
+            or "rol no autorizado para archivar" in error_message
+            or "permission denied" in error_message
+        ):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="No tienes permisos para archivar este producto.",
+            ) from exc
+
+        if error_code == "P0001" or (
+            "producto no encontrado o no está publicado" in error_message
+        ):
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="El producto no existe, no te pertenece o no está publicado.",
+            ) from exc
+
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="No se pudo archivar el producto.",
         ) from exc

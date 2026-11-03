@@ -11,6 +11,7 @@ from app.api.dependencies import AuthenticatedUser, get_current_user
 from app.schemas.product import ProductCreate, ProductResponse, ProductUpdate
 
 from app.services.product_service import (
+    archive_product,
     create_product,
     get_my_products,
     get_products,
@@ -81,5 +82,19 @@ def edit_my_product(
         product_id=product_id,
         seller_id=user.id,
         product=product,
+        db=user.db,
+    )
+
+
+
+@router.patch("/{product_id}/archive", response_model=ProductResponse)
+def archive_my_product(
+    product_id: str,
+    user: AuthenticatedUser = Depends(get_current_user),
+) -> dict[str, Any]:
+    """Archiva un producto propio del usuario autenticado."""
+    return archive_product(
+        product_id=product_id,
+        seller_id=user.id,
         db=user.db,
     )
