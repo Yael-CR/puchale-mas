@@ -216,3 +216,70 @@ def update_auction(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="No se pudo actualizar la subasta. Verifica los datos.",
         ) from exc
+
+
+
+def publish_auction(
+    auction_id: str,
+    db: Client,
+) -> dict[str, Any]:
+    """Publica una subasta mediante la función SQL segura de Supabase."""
+
+    try:
+        response = db.rpc(
+            "publish_auction",
+            {"p_auction_id": auction_id},
+        ).execute()
+
+        data = response.data
+
+        if isinstance(data, list) and data:
+            return data[0]
+
+        if isinstance(data, dict):
+            return data
+
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Supabase no devolvió la subasta publicada.",
+        )
+
+    except HTTPException:
+        raise
+
+    except Exception as exc:
+        error_message = str(exc)
+
+        expected_errors = [
+            "Se requiere autenticación.",
+            "La subasta no existe.",
+            "No tienes permiso para publicar esta subasta.",
+            "Tu rol no permite publicar subastas.",
+            "La subasta no está en estado de borrador.",
+            "El producto no existe, no te pertenece o no está publicado.",
+            "La configuración de precios no es válida.",
+            "Las fechas de la subasta estándar no son válidas.",
+            "La configuración de la subasta estándar no es válida.",
+            "No se puede publicar una subasta cuyo periodo ya terminó.",
+            "La duración de la subasta exprés no es válida.",
+            "La configuración de la subasta exprés no es válida.",
+            "La opción de duración no existe o está deshabilitada.",
+            "Las fechas de la subasta exclusiva no son válidas.",
+            "La configuración de la subasta exclusiva no es válida.",
+            "Las subastas exclusivas requieren un plan de membresía.",
+            "El tipo de subasta no es válido.",
+        ]
+
+        for message in expected_errors:
+            if message in error_message:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=message,
+                ) from exc
+
+        print("ERROR REAL AL PUBLICAR SUBASTA:", repr(exc))
+
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="No se pudo publicar la subasta.",
+        ) from exc

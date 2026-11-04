@@ -1,4 +1,12 @@
 
+from uuid import UUID
+
+from app.schemas.bid import BidRequestCreate
+from app.services.bid_service import enqueue_bid_request
+
+
+
+
 from typing import Any
 
 from fastapi import APIRouter, Depends, status
@@ -14,6 +22,7 @@ from app.services.auction_service import (
     create_auction,
     get_auctions,
     get_my_auctions,
+    publish_auction,
     update_auction,
 )
 
@@ -56,6 +65,26 @@ def add_auction(
 
 
 
+
+
+@router.post(
+    "/{auction_id}/publish",
+    response_model=AuctionResponse,
+)
+def publish_auction_endpoint(
+    auction_id: str,
+    user: AuthenticatedUser = Depends(get_current_user),
+):
+    return publish_auction(
+        auction_id=auction_id,
+        db=user.db,
+    )
+
+
+
+
+
+
 @router.patch(
     "/{auction_id}",
     response_model=AuctionResponse,
@@ -69,5 +98,18 @@ def edit_auction(
     return update_auction(
         auction_id=auction_id,
         auction=auction,
+        db=user.db,
+    )
+
+
+@router.post("/{auction_id}/bids", status_code=status.HTTP_202_ACCEPTED)
+def request_bid(
+    auction_id: UUID,
+    bid: BidRequestCreate,
+    user: AuthenticatedUser = Depends(get_current_user),
+):
+    return enqueue_bid_request(
+        auction_id=auction_id,
+        idempotency_key=bid.idempotency_key,
         db=user.db,
     )
