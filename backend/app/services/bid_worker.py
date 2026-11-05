@@ -105,7 +105,63 @@ def process_auction_queue(auction_id: str) -> int:
 
 
 
+
+
+def close_due_auction(auction_id: str) -> bool:
+    # Verificar que no queden solicitudes pendientes.
+    pending_response = (
+        supabase_admin.table("bid_requests")
+        .select("id")
+        .eq("auction_id", auction_id)
+        .in_("status", ["queued", "processing"])
+        .limit(1)
+        .execute()
+    )
+
+    if pending_response.data:
+        log_event(
+            "auction_close_waiting_for_requests",
+            auction_id=auction_id,
+        )
+        return False
+
+    try:
+        response = supabase_admin.rpc(
+            "close_auction",
+            {"p_auction_id": auction_id},
+        ).execute()
+
+        auction = normalize_rpc_result(response.data)
+
+        log_event(
+            "auction_closed",
+            auction_id=auction_id,
+            status=auction.get("status") if auction else "unknown",
+            winner_id=auction.get("winner_id") if auction else None,
+            final_price=auction.get("current_price") if auction else None,
+        )
+
+        return True
+
+    except Exception as exc:
+        log_event(
+            "auction_close_error",
+            auction_id=auction_id,
+            error=str(exc),
+        )
+        return False
+
+
+
+
+
+
+
+
+
+
 async def run_worker_cycle() -> int:
+    # Buscar solicitudes pendientes.
     response = (
         supabase_admin.table("bid_requests")
         .select("auction_id")
@@ -122,17 +178,40 @@ async def run_worker_cycle() -> int:
         )
     )
 
+    # Buscar subastas que ya llegaron a su hora de cierre.
+    now_iso = datetime.now(timezone.utc).isoformat()
+
+    due_response = (
+        supabase_admin.table("auctions")
+        .select("id")
+        .in_("status", ["active", "closing"])
+        .lte("ends_at", now_iso)
+        .order("ends_at")
+        .limit(BATCH_SIZE)
+        .execute()
+    )
+
+    due_auction_ids = [
+        row["id"]
+        for row in (due_response.data or [])
+    ]
+
+    # Incluir también las subastas vencidas en el procesamiento.
+    all_auction_ids = list(
+        dict.fromkeys(auction_ids + due_auction_ids)
+    )
+
     results = await asyncio.gather(
         *[
             asyncio.to_thread(process_auction_queue, auction_id)
-            for auction_id in auction_ids
+            for auction_id in all_auction_ids
         ],
         return_exceptions=True,
     )
 
     total_processed = 0
 
-    for auction_id, result in zip(auction_ids, results):
+    for auction_id, result in zip(all_auction_ids, results):
         if isinstance(result, Exception):
             log_event(
                 "auction_queue_error",
@@ -142,7 +221,18 @@ async def run_worker_cycle() -> int:
         else:
             total_processed += result
 
+    # Intentar cerrar las subastas vencidas.
+    if due_auction_ids:
+        await asyncio.gather(
+            *[
+                asyncio.to_thread(close_due_auction, auction_id)
+                for auction_id in due_auction_ids
+            ],
+            return_exceptions=True,
+        )
+
     return total_processed
+
 
 
 
