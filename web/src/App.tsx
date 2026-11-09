@@ -1,303 +1,141 @@
-
-import { useEffect, useState } from 'react'
-import type { Session } from '@supabase/supabase-js'
-import { supabase } from './lib/supabase'
+import { useAuth } from './features/auth/hooks/useAuth'
+import { AuthDiagnostics } from './features/dev-tools/components/AuthDiagnostics'
 import './App.css'
 
-const API_URL = 'http://127.0.0.1:8000'
+function Navbar() {
+  return (
+    <nav className="top-navbar">
+      <div className="nav-left">
+        <div className="brand-logo-small">V</div>
+        <span className="nav-brand">
+          PUCHALE<span>+</span>
+        </span>
+        <div className="nav-links">
+          <a href="#subastas">Subastas</a>
+          <a href="#categorias">Categorías</a>
+          <a href="#proximos">Próximos Lotes</a>
+        </div>
+      </div>
+      <div className="nav-right">
+        <span className="nav-support">Soporte</span>
+        <div className="nav-search-placeholder">Buscar lote...</div>
+        <div className="nav-bids-pill">
+          <span className="bids-dot" />
+          <span>Pujas 3</span>
+        </div>
+        <div className="nav-user-badge">ME</div>
+      </div>
+    </nav>
+  )
+}
 
 function App() {
-  const [session, setSession] = useState<Session | null>(null)
-  const [loading, setLoading] = useState(true)
-
-  const [error, setError] = useState('')
-  const [securityResult, setSecurityResult] = useState('')
-  const [backendResult, setBackendResult] = useState('')
-
-  const [testingSecurity, setTestingSecurity] = useState(false)
-  const [testingBackend, setTestingBackend] = useState(false)
-
-  useEffect(() => {
-    async function checkSession() {
-      try {
-        const { data, error } = await supabase.auth.getSession()
-
-        if (error) {
-          throw error
-        }
-
-        console.log('Sesión inicial:', data.session)
-
-        setSession(data.session)
-      } catch (err) {
-        setError(
-          err instanceof Error
-            ? err.message
-            : 'No se pudo recuperar la sesión.'
-        )
-      } finally {
-        setLoading(false)
-      }
-    }
-
-    void checkSession()
-
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((event, newSession) => {
-      console.log('Evento de autenticación:', event)
-
-      setSession(newSession)
-
-      if (!newSession) {
-        setSecurityResult('')
-        setBackendResult('')
-      }
-    })
-
-    return () => subscription.unsubscribe()
-  }, [])
-
-  async function signInWithGoogle() {
-    setError('')
-
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: {
-        redirectTo: window.location.origin,
-      },
-    })
-
-    if (error) {
-      setError(error.message)
-    }
-  }
-
-  async function signOut() {
-    setError('')
-    setSecurityResult('')
-    setBackendResult('')
-
-    const { error } = await supabase.auth.signOut()
-
-    if (error) {
-      setError(error.message)
-    }
-  }
-
-  async function testSecurity() {
-    setError('')
-    setSecurityResult('')
-    setTestingSecurity(true)
-
-    try {
-      if (!session) {
-        throw new Error('Debes iniciar sesión primero.')
-      }
-
-      // 1. Consultar perfiles visibles según las políticas RLS.
-      const { data: profiles, error: profileError } = await supabase
-        .from('profiles')
-        .select('id, display_name, avatar_path')
-
-      console.log('Resultado de perfiles:', profiles)
-      console.log('Error de perfiles:', profileError)
-
-      if (profileError) {
-        throw new Error(
-          `Perfil: ${profileError.message} (código: ${profileError.code})`
-        )
-      }
-
-      if (!profiles || profiles.length === 0) {
-        throw new Error(
-          'No se encontró ningún perfil visible. Comprueba la fila y las políticas RLS.'
-        )
-      }
-
-      if (profiles.length > 1) {
-        throw new Error(
-          'La consulta devolvió varios perfiles; revisaremos las políticas RLS.'
-        )
-      }
-
-      const profile = profiles[0]
-
-      // 2. Verificar que el perfil pertenece al usuario autenticado.
-      if (profile.id !== session.user.id) {
-        throw new Error(
-          'El perfil devuelto no corresponde al usuario actual.'
-        )
-      }
-
-      // 3. Consultar los roles visibles del usuario.
-      const { data: roles, error: rolesError } = await supabase
-        .from('user_roles')
-        .select('roles(code, description)')
-
-      console.log('Roles:', roles)
-      console.log('Error de roles:', rolesError)
-
-      if (rolesError) {
-        throw new Error(
-          `Roles: ${rolesError.message} (código: ${rolesError.code})`
-        )
-      }
-
-      setSecurityResult(
-        JSON.stringify(
-          {
-            resultado: 'Consultas completadas correctamente',
-            perfil: profile,
-            roles,
-          },
-          null,
-          2
-        )
-      )
-    } catch (err) {
-      setError(
-        err instanceof Error ? err.message : 'Error desconocido'
-      )
-    } finally {
-      setTestingSecurity(false)
-    }
-  }
-
-  async function testBackendAuth() {
-    setError('')
-    setBackendResult('')
-    setTestingBackend(true)
-
-    try {
-      if (!session?.access_token) {
-        throw new Error(
-          'Debes iniciar sesión con Google antes de probar FastAPI.'
-        )
-      }
-
-      const response = await fetch(`${API_URL}/api/auth/me`, {
-        method: 'GET',
-        headers: {
-          Authorization: `Bearer ${session.access_token}`,
-          Accept: 'application/json',
-        },
-      })
-
-      const responseText = await response.text()
-
-      let result: unknown
-
-      try {
-        result = responseText ? JSON.parse(responseText) : null
-      } catch {
-        result = { message: responseText }
-      }
-
-      if (!response.ok) {
-        throw new Error(
-          `FastAPI respondió con HTTP ${response.status}: ${JSON.stringify(result)}`
-        )
-      }
-
-      setBackendResult(
-        JSON.stringify(
-          {
-            resultado: 'FastAPI reconoció la sesión de Supabase',
-            respuesta: result,
-          },
-          null,
-          2
-        )
-      )
-    } catch (err) {
-      setError(
-        err instanceof Error
-          ? err.message
-          : 'No se pudo conectar con FastAPI.'
-      )
-    } finally {
-      setTestingBackend(false)
-    }
-  }
+  const { session, loading, error, signInWithGoogle, signOut } = useAuth()
 
   if (loading) {
     return (
-      <main>
-        <p>Comprobando sesión...</p>
-      </main>
+      <>
+        <Navbar />
+        <main className="app-shell">
+          <div className="loading-card">
+            <div className="loading-spinner" />
+            <h2>Preparando Puchale+</h2>
+            <p>Comprobando tu sesión...</p>
+          </div>
+        </main>
+      </>
     )
   }
 
   return (
-    <main>
-      <h1>puchale+</h1>
-      <p>Subastas en tiempo real</p>
+    <>
+      <Navbar />
 
-      {session ? (
-        <section>
-          <h2>¡Has iniciado sesión!</h2>
-          <p>Correo: {session.user.email}</p>
-          <p>UID: {session.user.id}</p>
+      <main className="app-shell">
+        <div className="hero">
+          <div className="hero-copy">
+            <span className="eyebrow">SUBASTAS EN TIEMPO REAL</span>
 
-          <div>
-            <button
-              onClick={testSecurity}
-              disabled={testingSecurity}
-            >
-              {testingSecurity
-                ? 'Comprobando permisos...'
-                : 'Probar perfil y roles'}
-            </button>
+            <h1>
+              Cada oferta
+              <br />
+              <span>cuenta.</span>
+            </h1>
 
-            {securityResult && (
-              <pre
-                style={{
-                  textAlign: 'left',
-                  whiteSpace: 'pre-wrap',
-                  overflowWrap: 'anywhere',
-                }}
-              >
-                {securityResult}
-              </pre>
-            )}
+            <p className="description">
+              Descubre productos exclusivos, participa en subastas en vivo y
+              encuentra tu próxima gran oportunidad.
+            </p>
           </div>
 
-          <div>
-            <button
-              onClick={testBackendAuth}
-              disabled={testingBackend}
-            >
-              {testingBackend
-                ? 'Probando FastAPI...'
-                : 'Probar autenticación con FastAPI'}
-            </button>
+          <section className="auth-card">
+            <div className="card-decoration" />
 
-            {backendResult && (
-              <pre
-                style={{
-                  textAlign: 'left',
-                  whiteSpace: 'pre-wrap',
-                  overflowWrap: 'anywhere',
-                }}
-              >
-                {backendResult}
-              </pre>
-            )}
-          </div>
+            <div className="card-content">
+              {session ? (
+                <div className="authenticated-section">
+                  <div className="success-icon">✓</div>
 
-          <button onClick={signOut}>
-            Cerrar sesión
-          </button>
-        </section>
-      ) : (
-        <button onClick={signInWithGoogle}>
-          Continuar con Google
-        </button>
-      )}
+                  <h2>¡Has iniciado sesión!</h2>
 
-      {error && <p role="alert">Error: {error}</p>}
-    </main>
+                  <p className="session-description">
+                    Tu cuenta está conectada correctamente al sistema.
+                  </p>
+
+                  <div className="user-info">
+                    <div>
+                      <span>Correo electrónico</span>
+                      <strong>{session.user.email}</strong>
+                    </div>
+
+                    <div>
+                      <span>Identificador de usuario</span>
+                      <strong className="uid">{session.user.id}</strong>
+                    </div>
+                  </div>
+
+                  {import.meta.env.DEV && (
+                    <div className="diagnostics">
+                      <AuthDiagnostics session={session} />
+                    </div>
+                  )}
+
+                  <button className="button-secondary" onClick={signOut}>
+                    Cerrar sesión
+                  </button>
+                </div>
+              ) : (
+                <div className="login-section">
+                  <h2 className="card-title">Entra a Puchale+</h2>
+
+                  <button className="google-button" onClick={signInWithGoogle}>
+                    <span className="google-icon">G</span>
+                    Continuar con Google
+                    <span className="button-arrow">→</span>
+                  </button>
+
+                  <p className="login-note">
+                    Accede de forma segura con tu cuenta verificada de Google.
+                  </p>
+                </div>
+              )}
+
+              {error && (
+                <div className="error-message" role="alert">
+                  <strong>Error de autenticación</strong>
+                  <p>{error}</p>
+                </div>
+              )}
+            </div>
+          </section>
+        </div>
+
+        <footer className="app-footer">
+          <span>PUCHALE+ © 2026</span>
+          <span>Compra · Ofrece · Gana</span>
+        </footer>
+      </main>
+    </>
   )
 }
 

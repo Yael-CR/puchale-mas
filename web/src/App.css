@@ -1,7 +1,452 @@
+#root {
+  min-height: 100vh;
+  background: #0b0b0b;
+  color: #e1e1e1;
+}
 
-/*
- * Los estilos globales de Puchale+ están en index.css.
- * Los componentes tendrán sus propios estilos cuando sea necesario.
- *
- * Tailwind CSS 4 es el sistema principal de utilidades.
- */
+/* ---------- Barra de navegación ---------- */
+.top-navbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 24px;
+  width: 100%;
+  height: 65px;
+  padding: 0 32px;
+  background: #111111;
+  border-bottom: 1px solid #222222;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.nav-left {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  min-width: 0;
+}
+
+.brand-logo-small {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  background: white;
+  color: #0b0b0b;
+  font-weight: 900;
+  border-radius: 6px;
+  font-size: 15px;
+}
+
+.nav-brand {
+  font-weight: 800;
+  font-size: 16px;
+  letter-spacing: -0.5px;
+  color: white;
+  white-space: nowrap;
+}
+
+.nav-brand span { color: #a3ff00; }
+
+.nav-links {
+  display: flex;
+  gap: 20px;
+  margin-left: 20px;
+}
+
+.nav-links a {
+  color: #888;
+  text-decoration: none;
+  font-size: 13px;
+  font-weight: 500;
+  white-space: nowrap;
+  transition: color 0.2s;
+}
+
+.nav-links a:hover { color: white; }
+
+.nav-right {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  flex-shrink: 0;
+  font-size: 13px;
+  color: #aaa;
+}
+
+.nav-support { cursor: pointer; white-space: nowrap; }
+.nav-support:hover { color: white; }
+
+.nav-search-placeholder {
+  background: #1a1a1a;
+  border: 1px solid #333;
+  padding: 6px 14px;
+  border-radius: 6px;
+  color: #666;
+  font-size: 12px;
+  width: 160px;
+}
+
+.nav-bids-pill {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #1a1a1a;
+  border: 1px solid #333;
+  padding: 5px 12px;
+  border-radius: 20px;
+  color: white;
+  font-weight: 600;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.bids-dot {
+  width: 7px;
+  height: 7px;
+  background: #a3ff00;
+  border-radius: 50%;
+  box-shadow: 0 0 8px #a3ff00;
+}
+
+.nav-user-badge {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  background: #222;
+  border: 1px solid #444;
+  border-radius: 50%;
+  font-size: 11px;
+  font-weight: 700;
+  color: white;
+  cursor: pointer;
+}
+
+/* ---------- Contenedor principal ---------- */
+.app-shell {
+  min-height: calc(100vh - 65px);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 48px 32px 32px;
+  background: radial-gradient(circle at 30% 30%, #161a15 0%, #0b0b0b 70%);
+}
+
+/* ---------- Hero a dos columnas ---------- */
+.hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 420px;
+  align-items: center;
+  gap: 72px;
+  width: 100%;
+  max-width: 1100px;
+}
+
+.hero-copy {
+  max-width: 560px;
+}
+
+.eyebrow {
+  display: inline-block;
+  margin-bottom: 20px;
+  color: #a3ff00;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 2px;
+}
+
+.hero-copy h1 {
+  margin: 0;
+  color: white;
+  font-size: clamp(44px, 6vw, 68px);
+  line-height: 1.05;
+  letter-spacing: -2px;
+  font-weight: 800;
+}
+
+.hero-copy h1 span { color: #a3ff00; }
+
+.description {
+  margin: 24px 0 0;
+  max-width: 460px;
+  color: #8c8c8c;
+  font-size: 16px;
+  line-height: 1.6;
+}
+
+/* ---------- Tarjeta de acceso ---------- */
+.auth-card {
+  position: relative;
+  overflow: hidden;
+  width: 100%;
+  background: #141414;
+  border: 1px solid #262626;
+  border-radius: 20px;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.6);
+}
+
+.card-decoration {
+  height: 3px;
+  background: linear-gradient(90deg, #333, #a3ff00);
+}
+
+.card-content {
+  padding: 32px;
+}
+
+.card-title {
+  margin: 0 0 20px;
+  color: white;
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: -0.3px;
+}
+
+/* ---------- Login ---------- */
+.google-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 52px;
+  padding: 0 18px;
+  border: 1px solid #333;
+  border-radius: 12px;
+  background: #1b1b1b;
+  color: white;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 200ms ease;
+}
+
+.google-button:hover {
+  border-color: #a3ff00;
+  background: #222;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(163, 255, 0, 0.15);
+}
+
+.google-icon { font-size: 18px; font-weight: 700; color: #a3ff00; }
+.button-arrow { margin-left: auto; color: #a3ff00; font-size: 18px; }
+
+.login-note {
+  margin: 16px 0 0;
+  color: #666;
+  font-size: 12px;
+  text-align: center;
+}
+
+/* ---------- Sesión iniciada ---------- */
+.authenticated-section { text-align: center; }
+
+.success-icon {
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  margin: 0 auto 16px;
+  border-radius: 50%;
+  background: rgba(163, 255, 0, 0.1);
+  color: #a3ff00;
+  font-size: 22px;
+  font-weight: 700;
+  border: 1px solid rgba(163, 255, 0, 0.3);
+}
+
+.authenticated-section h2 {
+  margin: 0 0 6px;
+  color: white;
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: -0.3px;
+}
+
+.session-description { margin: 0; color: #8c8c8c; font-size: 13px; }
+
+.user-info {
+  display: grid;
+  gap: 10px;
+  margin: 24px 0;
+  text-align: left;
+}
+
+.user-info div {
+  display: grid;
+  gap: 4px;
+  padding: 12px 14px;
+  border: 1px solid #222;
+  border-radius: 10px;
+  background: #111;
+}
+
+.user-info span {
+  color: #666;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.user-info strong {
+  color: #ddd;
+  font-size: 13px;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+/* ---------- Diagnóstico (dev) ---------- */
+.diagnostics {
+  margin: 20px 0;
+  padding: 14px;
+  border: 1px solid #222;
+  border-radius: 10px;
+  background: #111;
+  text-align: left;
+  color: #ccc;
+}
+
+.diagnostics h2,
+.diagnostics h3,
+.diagnostics h4 {
+  margin: 0 0 12px;
+  color: #ddd;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0;
+}
+
+.diagnostics button {
+  display: block;
+  width: 100%;
+  margin: 0 0 8px;
+  padding: 10px 12px;
+  border: 1px solid #333;
+  border-radius: 8px;
+  background: #1b1b1b;
+  color: #ddd;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.diagnostics button:last-of-type { margin-bottom: 0; }
+
+.diagnostics button:hover {
+  border-color: #a3ff00;
+  background: #222;
+}
+
+.diagnostics pre,
+.diagnostics code {
+  margin: 8px 0 0;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: #0b0b0b;
+  color: #ccc;
+  font-size: 11px;
+  overflow-x: auto;
+}
+
+.button-secondary {
+  width: 100%;
+  padding: 14px;
+  border: 1px solid #333;
+  border-radius: 10px;
+  background: transparent;
+  color: #ccc;
+  font-family: inherit;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.button-secondary:hover {
+  background: #222;
+  color: white;
+  border-color: #555;
+}
+
+.error-message {
+  margin-top: 20px;
+  padding: 12px;
+  border: 1px solid rgba(255, 75, 75, 0.3);
+  border-radius: 8px;
+  background: rgba(255, 75, 75, 0.08);
+  color: #ff6b6b;
+  font-size: 13px;
+}
+
+.error-message p { margin: 4px 0 0; }
+
+/* ---------- Loading ---------- */
+.loading-card {
+  width: 100%;
+  max-width: 420px;
+  padding: 40px;
+  border: 1px solid #262626;
+  border-radius: 20px;
+  background: #141414;
+  text-align: center;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+}
+
+.loading-card h2 { margin: 0 0 6px; color: white; font-size: 20px; font-weight: 700; }
+.loading-card p { margin: 0; color: #777; font-size: 13px; }
+
+.loading-spinner {
+  width: 32px;
+  height: 32px;
+  margin: 0 auto 16px;
+  border: 3px solid #222;
+  border-top-color: #a3ff00;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ---------- Footer ---------- */
+.app-footer {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  max-width: 1100px;
+  margin-top: 56px;
+  color: #555;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.8px;
+}
+
+/* ---------- Responsive ---------- */
+@media (max-width: 960px) {
+  .nav-search-placeholder { display: none; }
+
+  .hero {
+    grid-template-columns: 1fr;
+    gap: 40px;
+    max-width: 480px;
+  }
+
+  .hero-copy h1 { font-size: clamp(38px, 10vw, 52px); }
+  .description { font-size: 15px; }
+  .app-footer { max-width: 480px; margin-top: 40px; }
+}
+
+@media (max-width: 600px) {
+  .top-navbar { padding: 0 16px; }
+  .nav-links, .nav-support, .nav-search-placeholder { display: none; }
+  .app-shell { padding: 32px 16px 24px; justify-content: flex-start; }
+  .card-content { padding: 24px; }
+}
