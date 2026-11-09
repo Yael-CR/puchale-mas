@@ -1,13 +1,6 @@
 
-from uuid import UUID
-
-from app.schemas.bid import BidRequestCreate
-from app.services.bid_service import enqueue_bid_request
-
-
-
-
 from typing import Any
+from uuid import UUID
 
 from fastapi import APIRouter, Depends, status
 
@@ -17,34 +10,19 @@ from app.schemas.auction import (
     AuctionResponse,
     AuctionUpdate,
 )
-
+from app.schemas.bid import BidRequestCreate
 from app.services.auction_service import (
     create_auction,
-    get_auctions,
-    get_my_auctions,
     publish_auction,
     update_auction,
 )
+from app.services.bid_service import enqueue_bid_request
 
 
-router = APIRouter(prefix="/api/auctions", tags=["Auctions"])
-
-
-@router.get("", response_model=list[AuctionResponse])
-def list_auctions() -> list[dict[str, Any]]:
-    """Lista las subastas públicas."""
-    return get_auctions()
-
-
-@router.get("/mine", response_model=list[AuctionResponse])
-def list_my_auctions(
-    user: AuthenticatedUser = Depends(get_current_user),
-) -> list[dict[str, Any]]:
-    """Lista las subastas del vendedor autenticado."""
-    return get_my_auctions(
-        seller_id=user.id,
-        db=user.db,
-    )
+router = APIRouter(
+    prefix="/api/auctions",
+    tags=["Auctions"],
+)
 
 
 @router.post(
@@ -57,14 +35,12 @@ def add_auction(
     user: AuthenticatedUser = Depends(get_current_user),
 ) -> dict[str, Any]:
     """Crea una subasta como borrador."""
+
     return create_auction(
         auction=auction,
         seller_id=user.id,
         db=user.db,
     )
-
-
-
 
 
 @router.post(
@@ -75,14 +51,12 @@ def publish_auction_endpoint(
     auction_id: str,
     user: AuthenticatedUser = Depends(get_current_user),
 ):
+    """Publica una subasta."""
+
     return publish_auction(
         auction_id=auction_id,
         db=user.db,
     )
-
-
-
-
 
 
 @router.patch(
@@ -95,6 +69,7 @@ def edit_auction(
     user: AuthenticatedUser = Depends(get_current_user),
 ) -> dict[str, Any]:
     """Actualiza una subasta propia que todavía está en borrador."""
+
     return update_auction(
         auction_id=auction_id,
         auction=auction,
@@ -102,12 +77,17 @@ def edit_auction(
     )
 
 
-@router.post("/{auction_id}/bids", status_code=status.HTTP_202_ACCEPTED)
+@router.post(
+    "/{auction_id}/bids",
+    status_code=status.HTTP_202_ACCEPTED,
+)
 def request_bid(
     auction_id: UUID,
     bid: BidRequestCreate,
     user: AuthenticatedUser = Depends(get_current_user),
 ):
+    """Registra una solicitud de puja."""
+
     return enqueue_bid_request(
         auction_id=auction_id,
         idempotency_key=bid.idempotency_key,
