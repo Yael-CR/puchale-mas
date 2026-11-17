@@ -1,10 +1,14 @@
-
 import { BrowserRouter, Route, Routes } from 'react-router-dom'
 
 import MainLayout from './components/layout/MainLayout'
 import HomePage from './features/home/pages/HomePage'
 import AuctionsPage from './features/auctions/pages/AuctionsPage'
 import AuctionDetailPage from './features/auctions/pages/AuctionDetailPage'
+import ProductsPage from './features/products/pages/ProductsPage'
+import ProductCreatePage from './features/products/pages/ProductCreatePage'
+import ProductEditPage from './features/products/pages/ProductEditPage'
+
+
 
 function App() {
   return (
@@ -17,6 +21,13 @@ function App() {
             path="/subastas/:auctionId"
             element={<AuctionDetailPage />}
           />
+
+          <Route path="/productos/nuevo" element={<ProductCreatePage />} />
+          <Route
+            path="/productos/:productId/editar"
+            element={<ProductEditPage />}
+          />
+          <Route path="/productos" element={<ProductsPage />} />
         </Route>
       </Routes>
     </BrowserRouter>
