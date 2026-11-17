@@ -1,10 +1,9 @@
 
-import { useState } from 'react'
-import { useParams, Link } from 'react-router-dom'
-import { ArrowLeft, Package, Gavel } from 'lucide-react'
+import { Link, useParams } from 'react-router-dom'
+import { ArrowLeft, Gavel } from 'lucide-react'
 
 import { useAuctionDetail } from '../hooks/useAuctionDetail'
-import ImageLightbox from '../components/ImageLightbox'
+import ProductImageGallery from '../components/ProductImageGallery'
 
 const currencyFormatter = new Intl.NumberFormat('es-MX', {
   style: 'currency',
@@ -20,14 +19,6 @@ const statusLabels: Record<string, string> = {
   no_winner: 'Sin ganador',
 }
 
-// Genera una versión dinámica de la URL según la última actualización.
-const getImageUrl = (url: string, updatedAt: string) => {
-  const version = new Date(updatedAt).getTime()
-  const separator = url.includes('?') ? '&' : '?'
-
-  return `${url}${separator}v=${version}`
-}
-
 export default function AuctionDetailPage() {
   const { auctionId } = useParams<{ auctionId: string }>()
 
@@ -36,9 +27,6 @@ export default function AuctionDetailPage() {
     loading,
     error,
   } = useAuctionDetail(auctionId ?? '')
-
-  const [selectedImageId, setSelectedImageId] = useState<string | null>(null)
-  const [lightboxOpen, setLightboxOpen] = useState(false)
 
   if (loading) {
     return (
@@ -76,21 +64,9 @@ export default function AuctionDetailPage() {
     )
   }
 
-  // Imágenes ordenadas por posición.
-  const images = [...(auction.product.images ?? [])].sort(
-    (a, b) => a.position - b.position,
-  )
-
-  const selectedImage = images.find(
-    (image) => image.id === selectedImageId,
-  )
-
-  const mainImage = selectedImage ?? images[0]
-
   return (
     <main className="min-h-[calc(100vh-65px)] bg-background px-4 py-8 sm:px-8">
       <div className="mx-auto w-full max-w-[1200px]">
-
         <Link
           to="/subastas"
           className="mb-7 inline-flex items-center gap-2 text-sm text-text-secondary transition-colors hover:text-brand"
@@ -100,78 +76,11 @@ export default function AuctionDetailPage() {
         </Link>
 
         <div className="grid grid-cols-1 gap-8 lg:grid-cols-2 lg:gap-12">
-
           {/* Galería de imágenes */}
-          <section>
-            <div className="aspect-square overflow-hidden rounded-2xl border border-border bg-surface">
-
-              {mainImage?.url ? (
-                <button
-                  type="button"
-                  onClick={() => setLightboxOpen(true)}
-                  aria-label="Ampliar imagen del producto"
-                  className="group relative block h-full w-full cursor-zoom-in"
-                >
-                  <img
-                    src={getImageUrl(
-                      mainImage.url,
-                      mainImage.updated_at,
-                    )}
-                    alt={auction.product.title}
-                    className="h-full w-full object-contain"
-                  />
-
-                  <span className="absolute bottom-4 right-4 rounded-full bg-black/65 px-3 py-2 text-xs font-medium text-white opacity-0 transition-opacity group-hover:opacity-100">
-                    Ampliar imagen
-                  </span>
-                </button>
-              ) : (
-                <div className="flex h-full flex-col items-center justify-center gap-4 text-text-muted">
-                  <Package size={72} strokeWidth={1} />
-
-                  <span className="text-sm">
-                    Este producto todavía no tiene imágenes
-                  </span>
-                </div>
-              )}
-            </div>
-
-            {/* Miniaturas */}
-            {images.length > 1 && (
-              <div className="mt-4 grid grid-cols-4 gap-3">
-                {images.map((image) => {
-                  const isSelected = mainImage?.id === image.id
-
-                  return (
-                    <button
-                      key={image.id}
-                      type="button"
-                      onClick={() => setSelectedImageId(image.id)}
-                      aria-label={`Ver imagen ${image.position + 1}`}
-                      aria-pressed={isSelected}
-                      className={`aspect-square overflow-hidden rounded-lg border bg-surface transition-all duration-200 focus-visible:outline-2 focus-visible:outline-brand ${
-                        isSelected
-                          ? 'border-brand ring-2 ring-brand/30'
-                          : 'border-border opacity-70 hover:border-brand/50 hover:opacity-100'
-                      }`}
-                    >
-                      {image.url && (
-                        <img
-                          src={getImageUrl(
-                            image.url,
-                            image.updated_at,
-                          )}
-                          alt={auction.product.title}
-                          className="h-full w-full object-cover"
-                          loading="lazy"
-                        />
-                      )}
-                    </button>
-                  )
-                })}
-              </div>
-            )}
-          </section>
+          <ProductImageGallery
+            images={auction.product.images ?? []}
+            title={auction.product.title}
+          />
 
           {/* Información de la subasta */}
           <section>
@@ -254,17 +163,6 @@ export default function AuctionDetailPage() {
           </section>
         </div>
       </div>
-
-      {/* Visor independiente de imágenes */}
-      {lightboxOpen && mainImage?.url && (
-        <ImageLightbox
-          images={images}
-          initialImageId={mainImage.id}
-          title={auction.product.title}
-          onClose={() => setLightboxOpen(false)}
-          onImageChange={setSelectedImageId}
-        />
-      )}
     </main>
   )
 }
