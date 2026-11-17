@@ -7,12 +7,20 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.dependencies import AuthenticatedUser, get_current_user
 from app.api.routes.products import router as products_router
+
 from app.api.routes.auctions import router as auctions_router
 from app.api.routes.auction_queries import router as auction_queries_router
 from app.services.bid_worker import bid_worker_loop
 from app.api.routes.auction_product_queries import (
     router as auction_product_queries_router,
 )
+
+
+
+from app.api.routes.product_images import router as product_images_router
+
+
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -66,7 +74,12 @@ def get_authenticated_user(
     }
 
 
+
+
+
+
 app.include_router(products_router)
 app.include_router(auctions_router)
 app.include_router(auction_queries_router)
 app.include_router(auction_product_queries_router)
+app.include_router(product_images_router)
