@@ -20,3 +20,9 @@ class ProductImageReorder(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     image_ids: list[UUID] = Field(min_length=1)
+
+
+class ProductImageReorderResponse(BaseModel):
+    success: bool
+    message: str
+    images: list[ProductImageResponse]

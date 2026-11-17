@@ -482,3 +482,55 @@ def delete_product_image(
         "deleted": True,
         "message": "Imagen eliminada correctamente.",
     }
+
+
+
+# funcion para reordenar las imagenes 
+
+
+def reorder_product_images(
+    product_id: str,
+    seller_id: str,
+    image_ids: list[str],
+    db,
+) -> list[dict]:
+    """
+    Reordena las imágenes de un producto mediante una función RPC.
+    """
+
+    # 1. Verificar propiedad y estado del producto.
+    get_owned_product(
+        product_id=product_id,
+        seller_id=seller_id,
+        db=db,
+    )
+
+    # 2. Ejecutar la función PostgreSQL.
+    try:
+        response = db.rpc(
+            "reorder_product_images",
+            {
+                "p_product_id": product_id,
+                "p_image_ids": image_ids,
+            },
+        ).execute()
+
+    except Exception as exc:
+        logger.exception(
+            "Error al reordenar las imágenes del producto %s",
+            product_id,
+        )
+
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="No se pudieron reordenar las imágenes.",
+        ) from exc
+
+    # 3. Construir las respuestas con sus URLs públicas.
+    return [
+        {
+            **image,
+            "url": get_public_image_url(image["storage_path"]),
+        }
+        for image in (response.data or [])
+    ]
