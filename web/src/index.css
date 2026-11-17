@@ -7,49 +7,66 @@
 [data-theme="dark"] {
   color-scheme: dark;
 
-  --brand: #a3ff00;
+  --brand: #A3E635;
+  --brand-hover: #BEF264;
+  --brand-foreground: #11150B;
 
-  --background: #0b0b0b;
-  --surface: #141414;
-  --surface-secondary: #1b1b1b;
+  --background: #090B0A;
+  --surface: #121613;
+  --surface-secondary: #1B211C;
+  --surface-tertiary: #252C26;
 
-  --border: #262626;
+  --border: #29312A;
 
-  --text-primary: #ffffff;
-  --text-secondary: #8c8c8c;
-  --text-muted: #666666;
+  --text-primary: #F5F7F3;
+  --text-secondary: #A0A99F;
+  --text-muted: #707A70;
 
-  --success: #a3ff00;
-  --danger: #ff6b6b;
+  --success: #22C55E;
+  --warning: #F59E0B;
+  --danger: #EF4444;
+  --info: #3B82F6;
+
+  --focus-ring: #A3E635;
 }
 
 [data-theme="light"] {
   color-scheme: light;
 
-  --brand: #639900;
+  --brand: #4D7C0F;
+  --brand-hover: #3F6212;
+  --brand-foreground: #FFFFFF;
 
-  --background: #f7f8f5;
-  --surface: #ffffff;
-  --surface-secondary: #f0f1ed;
+  --background: #F7F8F5;
+  --surface: #FFFFFF;
+  --surface-secondary: #EFF1EC;
+  --surface-tertiary: #E5E9E1;
 
-  --border: #dedfd9;
+  --border: #D9DED5;
 
-  --text-primary: #171914;
-  --text-secondary: #62665d;
-  --text-muted: #858980;
+  --text-primary: #171C16;
+  --text-secondary: #626B5F;
+  --text-muted: #858D82;
 
-  --success: #639900;
-  --danger: #dc4242;
+  --success: #15803D;
+  --warning: #B45309;
+  --danger: #DC2626;
+  --info: #2563EB;
+
+  --focus-ring: #4D7C0F;
 }
 
 /* ---------- Integración con Tailwind ---------- */
 
 @theme inline {
   --color-brand: var(--brand);
+  --color-brand-hover: var(--brand-hover);
+  --color-brand-foreground: var(--brand-foreground);
 
   --color-background: var(--background);
   --color-surface: var(--surface);
   --color-surface-secondary: var(--surface-secondary);
+  --color-surface-tertiary: var(--surface-tertiary);
 
   --color-border: var(--border);
 
@@ -58,7 +75,9 @@
   --color-text-muted: var(--text-muted);
 
   --color-success: var(--success);
+  --color-warning: var(--warning);
   --color-danger: var(--danger);
+  --color-info: var(--info);
 }
 
 /* ---------- Estilos globales ---------- */
