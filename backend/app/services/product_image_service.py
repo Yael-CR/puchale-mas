@@ -273,3 +273,212 @@ def list_product_images(product_id: str, db) -> list[dict]:
         }
         for image in response.data
     ]
+
+
+#######
+
+def replace_product_image(
+    product_id: str,
+    image_id: str,
+    seller_id: str,
+    file_bytes: bytes,
+    content_type: str,
+    db,
+) -> dict:
+    """
+    Reemplaza el archivo de una imagen existente,
+    conservando su ID y posición en la galería.
+    """
+
+    # 1. Validar el nuevo archivo.
+    extension = validate_image(file_bytes, content_type)
+
+    # 2. Verificar propiedad y estado del producto.
+    get_owned_product(
+        product_id=product_id,
+        seller_id=seller_id,
+        db=db,
+    )
+
+    # 3. Obtener la imagen existente.
+    image_response = (
+        db.table("product_images")
+        .select("id, product_id, storage_path, position, created_at")
+        .eq("id", image_id)
+        .eq("product_id", product_id)
+        .limit(1)
+        .execute()
+    )
+
+    if not image_response.data:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Imagen no encontrada para este producto.",
+        )
+
+    old_image = image_response.data[0]
+    old_storage_path = old_image["storage_path"]
+
+    # 4. Construir una ruta nueva.
+    new_storage_path = build_storage_path(
+        seller_id=seller_id,
+        product_id=product_id,
+        extension=extension,
+    )
+
+    storage = db.storage.from_(BUCKET)
+
+    # 5. Subir la nueva imagen.
+    try:
+        storage.upload(
+            path=new_storage_path,
+            file=file_bytes,
+            file_options={
+                "content-type": content_type,
+                "cache-control": "31536000",
+                "upsert": "false",
+            },
+        )
+
+    except Exception as exc:
+        logger.exception("Error al subir la imagen de reemplazo")
+
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail="No se pudo subir la nueva imagen.",
+        ) from exc
+
+    # 6. Actualizar el registro conservando ID y posición.
+    try:
+        update_response = (
+            db.table("product_images")
+            .update({
+                "storage_path": new_storage_path,
+            })
+            .eq("id", image_id)
+            .eq("product_id", product_id)
+            .select("id, product_id, storage_path, position, created_at")
+            .execute()
+        )
+
+        if not update_response.data:
+            raise RuntimeError(
+                "No se pudo actualizar el registro de la imagen."
+            )
+
+        updated_image = update_response.data[0]
+
+    except Exception as exc:
+        logger.exception("Error al actualizar el registro de la imagen")
+
+        # Intentar limpiar la nueva imagen si falla PostgreSQL.
+        try:
+            storage.remove([new_storage_path])
+        except Exception:
+            logger.exception(
+                "No se pudo limpiar la nueva imagen: %s",
+                new_storage_path,
+            )
+
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="La nueva imagen se subió, pero no se pudo actualizar el registro.",
+        ) from exc
+
+    # 7. Intentar eliminar el archivo anterior.
+    try:
+        storage.remove([old_storage_path])
+
+    except Exception:
+        # El reemplazo ya está confirmado en PostgreSQL.
+        # No debemos devolver un error que haga creer que falló.
+        logger.exception(
+            "No se pudo eliminar la imagen anterior: %s",
+            old_storage_path,
+        )
+
+    # 8. Devolver el registro actualizado.
+    return {
+        **updated_image,
+        "url": get_public_image_url(new_storage_path),
+    }
+
+
+###funcion para eliminar imagenes de productos
+
+
+def delete_product_image(
+    product_id: str,
+    image_id: str,
+    seller_id: str,
+    db,
+) -> dict:
+    """
+    Elimina una imagen de la galería de un producto.
+    """
+
+    # 1. Verificar propiedad y estado del producto.
+    get_owned_product(
+        product_id=product_id,
+        seller_id=seller_id,
+        db=db,
+    )
+
+    # 2. Obtener la imagen existente.
+    image_response = (
+        db.table("product_images")
+        .select("id, product_id, storage_path, position")
+        .eq("id", image_id)
+        .eq("product_id", product_id)
+        .limit(1)
+        .execute()
+    )
+
+    if not image_response.data:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Imagen no encontrada para este producto.",
+        )
+
+    image = image_response.data[0]
+    storage_path = image["storage_path"]
+
+    # 3. Eliminar el registro de la base de datos.
+    try:
+        delete_response = (
+            db.table("product_images")
+            .delete()
+            .eq("id", image_id)
+            .eq("product_id", product_id)
+            .execute()
+        )
+
+        if not delete_response.data:
+            raise RuntimeError(
+                "No se pudo eliminar el registro de la imagen."
+            )
+
+    except Exception as exc:
+        logger.exception("Error al eliminar el registro de la imagen")
+
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="No se pudo eliminar la imagen de la galería.",
+        ) from exc
+
+    # 4. Eliminar el archivo de Storage.
+    try:
+        db.storage.from_(BUCKET).remove([storage_path])
+
+    except Exception:
+        logger.exception(
+            "No se pudo eliminar el archivo de Storage: %s",
+            storage_path,
+        )
+
+    # 5. Confirmar eliminación.
+    return {
+        "id": image_id,
+        "deleted": True,
+        "message": "Imagen eliminada correctamente.",
+    }
