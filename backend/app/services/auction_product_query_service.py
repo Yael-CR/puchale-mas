@@ -1,3 +1,4 @@
+
 from typing import Any
 
 from fastapi import HTTPException, status
@@ -5,8 +6,37 @@ from fastapi import HTTPException, status
 from app.core.supabase import supabase
 
 
+def _add_product_image_urls(
+    auction: dict[str, Any],
+) -> dict[str, Any]:
+    """Genera las URL públicas de las imágenes del producto."""
+
+    product = auction.get("product")
+
+    if not product:
+        return auction
+
+    images = product.get("images") or []
+
+    for image in images:
+        storage_path = image.get("storage_path")
+
+        if storage_path:
+            image["url"] = (
+                supabase.storage
+                .from_("product-images")
+                .get_public_url(storage_path)
+            )
+
+    images.sort(key=lambda image: image.get("position", 0))
+
+    product["images"] = images
+
+    return auction
+
+
 def get_auctions_with_products() -> list[dict[str, Any]]:
-    """Obtiene las subastas públicas junto con sus productos."""
+    """Obtiene las subastas públicas junto con sus productos e imágenes."""
 
     response = (
         supabase.table("auctions")
@@ -27,7 +57,14 @@ def get_auctions_with_products() -> list[dict[str, Any]]:
                 title,
                 description,
                 condition,
-                status
+                status,
+                images:product_images (
+                    id,
+                    storage_path,
+                    position,
+                    created_at,
+                    updated_at
+                )
             )
             """
         )
@@ -40,13 +77,18 @@ def get_auctions_with_products() -> list[dict[str, Any]]:
         .execute()
     )
 
-    return response.data or []
+    auctions = response.data or []
+
+    return [
+        _add_product_image_urls(auction)
+        for auction in auctions
+    ]
 
 
 def get_auction_with_product(
     auction_id: str,
 ) -> dict[str, Any]:
-    """Obtiene una subasta pública junto con su producto."""
+    """Obtiene una subasta pública junto con su producto e imágenes."""
 
     response = (
         supabase.table("auctions")
@@ -67,7 +109,14 @@ def get_auction_with_product(
                 title,
                 description,
                 condition,
-                status
+                status,
+                images:product_images (
+                    id,
+                    storage_path,
+                    position,
+                    created_at,
+                    updated_at
+                )
             )
             """
         )
@@ -87,4 +136,4 @@ def get_auction_with_product(
             detail="Subasta no encontrada.",
         )
 
-    return response.data
+    return _add_product_image_urls(response.data)

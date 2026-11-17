@@ -1,6 +1,20 @@
+
 from uuid import UUID
+from datetime import datetime
 
 from pydantic import BaseModel, ConfigDict
+
+
+class ProductImageResponse(BaseModel):
+    """Imagen asociada a un producto."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    id: UUID
+    storage_path: str
+    position: int
+    created_at: datetime
+    url: str | None = None
 
 
 class AuctionProductResponse(BaseModel):
@@ -13,6 +27,7 @@ class AuctionProductResponse(BaseModel):
     description: str | None = None
     condition: str | None = None
     status: str
+    images: list[ProductImageResponse] = []
 
 
 class AuctionWithProductResponse(BaseModel):

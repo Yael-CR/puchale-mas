@@ -1,5 +1,6 @@
 
 import { useAuctions } from '../hooks/useAuctions'
+import AuctionCard from '../components/AuctionCard'
 
 export default function AuctionsPage() {
   const { auctions, loading, error } = useAuctions()
@@ -38,16 +39,30 @@ export default function AuctionsPage() {
             <h2 className="font-semibold text-text-primary">
               No hay subastas disponibles
             </h2>
+
             <p className="mt-2 text-sm text-text-secondary">
               Vuelve pronto para descubrir nuevos lotes.
             </p>
           </div>
         )}
 
-        {!loading && auctions.length > 0 && (
-          <p className="text-sm text-text-secondary">
-            {auctions.length} subastas disponibles
-          </p>
+        {!loading && !error && auctions.length > 0 && (
+          <>
+            <div className="mb-5 flex items-center justify-between">
+              <p className="text-sm text-text-secondary">
+                {auctions.length} subastas disponibles
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+              {auctions.map((auction) => (
+                <AuctionCard
+                  key={auction.id}
+                  auction={auction}
+                />
+              ))}
+            </div>
+          </>
         )}
       </div>
     </main>
