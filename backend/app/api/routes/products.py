@@ -3,13 +3,13 @@ from typing import Any
 
 from fastapi import APIRouter, Depends, status
 
-
-
-
-
 from app.api.dependencies import AuthenticatedUser, get_current_user
-from app.schemas.product import ProductCreate, ProductResponse, ProductUpdate
-
+from app.schemas.product import (
+    ProductCatalogResponse,
+    ProductCreate,
+    ProductResponse,
+    ProductUpdate,
+)
 from app.services.product_service import (
     archive_product,
     create_product,
@@ -22,9 +22,9 @@ from app.services.product_service import (
 router = APIRouter(prefix="/api/products", tags=["Products"])
 
 
-@router.get("", response_model=list[ProductResponse])
+@router.get("", response_model=list[ProductCatalogResponse])
 def list_products() -> list[dict[str, Any]]:
-    """Lista los productos publicados del catálogo público."""
+    """Lista los productos publicados con sus imágenes."""
     return get_products()
 
 
@@ -56,7 +56,6 @@ def add_product(
     )
 
 
-
 @router.patch("/{product_id}/publish", response_model=ProductResponse)
 def publish_my_product(
     product_id: str,
@@ -68,7 +67,6 @@ def publish_my_product(
         seller_id=user.id,
         db=user.db,
     )
-
 
 
 @router.patch("/{product_id}", response_model=ProductResponse)
@@ -84,7 +82,6 @@ def edit_my_product(
         product=product,
         db=user.db,
     )
-
 
 
 @router.patch("/{product_id}/archive", response_model=ProductResponse)

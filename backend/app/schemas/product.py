@@ -2,7 +2,7 @@
 from datetime import datetime
 from typing import Literal
 from uuid import UUID
-
+from app.schemas.product_image import ProductImageResponse
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 
@@ -65,3 +65,10 @@ class ProductUpdate(BaseModel):
             raise ValueError("El título no puede estar vacío.")
 
         return value
+
+
+
+class ProductCatalogResponse(ProductResponse):
+    """Producto publicado con su galería para el catálogo público."""
+
+    images: list[ProductImageResponse] = Field(default_factory=list)

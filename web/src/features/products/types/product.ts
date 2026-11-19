@@ -10,6 +10,7 @@ export interface Product {
   status: ProductStatus
   created_at: string
   updated_at: string
+  images?: ProductImage[]
 }
 
 export interface ProductCreate {

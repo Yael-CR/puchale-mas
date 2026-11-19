@@ -3,7 +3,7 @@ from typing import Any
 
 from fastapi import HTTPException, status
 from supabase import Client
-
+from app.services.product_image_service import get_public_image_url
 from app.core.supabase import supabase
 from app.schemas.product import ProductCreate, ProductUpdate
 
@@ -11,10 +11,11 @@ from app.schemas.product import ProductCreate, ProductUpdate
 ALLOWED_CREATION_ROLES = {"seller", "admin", "super_admin"}
 
 
-
 def get_products() -> list[dict[str, Any]]:
-    """Obtiene productos publicados para el catálogo público."""
+    """Obtiene productos publicados con sus imágenes para el catálogo."""
+
     try:
+        # 1. Consultar productos publicados.
         response = (
             supabase.table("products")
             .select(
@@ -25,14 +26,52 @@ def get_products() -> list[dict[str, Any]]:
             .order("created_at", desc=True)
             .execute()
         )
-        return response.data or []
+
+        products = response.data or []
+
+        if not products:
+            return []
+
+        # 2. Obtener todos los IDs de productos.
+        product_ids = [product["id"] for product in products]
+
+        # 3. Consultar las imágenes de todos los productos.
+        images_response = (
+            supabase.table("product_images")
+            .select(
+                "id, product_id, storage_path, position, created_at"
+            )
+            .in_("product_id", product_ids)
+            .order("position")
+            .execute()
+        )
+
+        # 4. Agrupar imágenes por producto.
+        images_by_product: dict[str, list[dict[str, Any]]] = {
+            product_id: []
+            for product_id in product_ids
+        }
+
+        for image in images_response.data or []:
+            images_by_product[image["product_id"]].append({
+                **image,
+                "url": get_public_image_url(image["storage_path"]),
+            })
+
+        # 5. Devolver productos con sus galerías.
+        return [
+            {
+                **product,
+                "images": images_by_product[product["id"]],
+            }
+            for product in products
+        ]
+
     except Exception as exc:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="No se pudieron consultar los productos.",
         ) from exc
-
-
 
 
 
