@@ -1,16 +1,22 @@
+
 from uuid import UUID
 
 from fastapi import APIRouter, Depends
 
 from app.api.dependencies import AuthenticatedUser, get_current_user
 from app.schemas.auction import AuctionResponse
-from app.schemas.auction_query import AuctionBidResponse
+from app.schemas.auction_query import (
+    AuctionBidResponse,
+    BidRequestStatusResponse,
+)
 from app.services.auction_query_service import (
     get_auction_detail,
     get_auction_bids,
     get_auctions,
     get_my_auctions,
+    get_bid_request_status,
 )
+
 
 router = APIRouter(
     prefix="/api/auctions",
@@ -47,3 +53,18 @@ def auction_bids(
     user: AuthenticatedUser = Depends(get_current_user),
 ):
     return get_auction_bids(auction_id=auction_id, db=user.db)
+
+
+@router.get(
+    "/bid-requests/{request_id}",
+    response_model=BidRequestStatusResponse,
+)
+def bid_request_status(
+    request_id: UUID,
+    user: AuthenticatedUser = Depends(get_current_user),
+):
+    return get_bid_request_status(
+        request_id=request_id,
+        bidder_id=user.id,
+        db=user.db,
+    )

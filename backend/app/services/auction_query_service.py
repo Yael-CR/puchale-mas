@@ -6,7 +6,7 @@ from fastapi import HTTPException, status
 from supabase import Client
 
 from app.core.supabase import supabase
-
+from app.schemas.auction_query import BidRequestStatusResponse
 
 def get_auctions() -> list[dict[str, Any]]:
     """Obtiene las subastas públicas."""
@@ -97,3 +97,39 @@ def get_auction_bids(
     )
 
     return response.data or []
+
+
+def get_bid_request_status(
+    request_id: UUID,
+    bidder_id: UUID,
+    db: Client,
+) -> dict[str, Any]:
+    """Obtiene el estado de una solicitud de puja propia."""
+
+    response = (
+        db.table("bid_requests")
+        .select(
+            """
+            id,
+            auction_id,
+            status,
+            rejection_reason,
+            sequence_no,
+            received_at,
+            processed_at,
+            expired_at
+            """
+        )
+        .eq("id", str(request_id))
+        .eq("bidder_id", str(bidder_id))
+        .maybe_single()
+        .execute()
+    )
+
+    if response is None or not response.data:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Solicitud de puja no encontrada.",
+        )
+
+    return response.data
