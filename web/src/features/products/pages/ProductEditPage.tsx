@@ -4,6 +4,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom'
 
 import { useProducts } from '../hooks/useProducts'
 import ProductForm from '../components/ProductForm'
+import ProductImageManager from '../components/ProductImageManager'
 
 import { updateProduct } from '../store/productsSlice'
 
@@ -99,6 +100,10 @@ export default function ProductEditPage() {
           saving={saving}
           onSubmit={handleUpdate}
         />
+      </div>
+
+      <div className="mt-8">
+        <ProductImageManager productId={product.id} />
       </div>
     </section>
   )

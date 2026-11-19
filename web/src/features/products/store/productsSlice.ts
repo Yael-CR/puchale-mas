@@ -7,22 +7,36 @@ import type {
   Product,
   ProductCreate,
   ProductUpdate,
+  ProductImage,
+  ProductImageReorder,
 } from '../types/product'
 
 interface ProductsState {
   items: Product[]
   myProducts: Product[]
+
   loading: boolean
   saving: boolean
   error: string | null
+
+  images: ProductImage[]
+  imagesLoading: boolean
+  imagesSaving: boolean
+  imagesError: string | null
 }
 
 const initialState: ProductsState = {
   items: [],
   myProducts: [],
+
   loading: false,
   saving: false,
   error: null,
+
+  images: [],
+  imagesLoading: false,
+  imagesSaving: false,
+  imagesError: null,
 }
 
 // CATÁLOGO PÚBLICO
@@ -65,7 +79,10 @@ export const createProduct = createAsyncThunk(
 export const updateProduct = createAsyncThunk(
   'products/updateProduct',
   async (
-    { productId, payload }: {
+    {
+      productId,
+      payload,
+    }: {
       productId: string
       payload: ProductUpdate
     },
@@ -103,17 +120,148 @@ export const archiveProduct = createAsyncThunk(
   },
 )
 
+// ==============================
+// IMÁGENES DEL PRODUCTO
+// ==============================
+
+// CARGAR GALERÍA
+export const fetchProductImages = createAsyncThunk(
+  'products/fetchProductImages',
+  async (productId: string, { rejectWithValue }) => {
+    try {
+      const images = await productService.getProductImages(productId)
+
+      return { productId, images }
+    } catch {
+      return rejectWithValue('No se pudieron cargar las imágenes.')
+    }
+  },
+)
+
+// SUBIR IMAGEN
+export const uploadProductImage = createAsyncThunk(
+  'products/uploadProductImage',
+  async (
+    {
+      productId,
+      file,
+    }: {
+      productId: string
+      file: File
+    },
+    { rejectWithValue },
+  ) => {
+    try {
+      return await productService.uploadProductImage(productId, file)
+    } catch {
+      return rejectWithValue('No se pudo subir la imagen.')
+    }
+  },
+)
+
+// REEMPLAZAR IMAGEN
+export const replaceProductImage = createAsyncThunk(
+  'products/replaceProductImage',
+  async (
+    {
+      productId,
+      imageId,
+      file,
+    }: {
+      productId: string
+      imageId: string
+      file: File
+    },
+    { rejectWithValue },
+  ) => {
+    try {
+      return await productService.replaceProductImage(
+        productId,
+        imageId,
+        file,
+      )
+    } catch {
+      return rejectWithValue('No se pudo reemplazar la imagen.')
+    }
+  },
+)
+
+// ELIMINAR IMAGEN
+export const deleteProductImage = createAsyncThunk(
+  'products/deleteProductImage',
+  async (
+    {
+      productId,
+      imageId,
+    }: {
+      productId: string
+      imageId: string
+    },
+    { rejectWithValue },
+  ) => {
+    try {
+      await productService.deleteProductImage(productId, imageId)
+
+      return { productId, imageId }
+    } catch {
+      return rejectWithValue('No se pudo eliminar la imagen.')
+    }
+  },
+)
+
+// REORDENAR GALERÍA
+export const reorderProductImages = createAsyncThunk(
+  'products/reorderProductImages',
+  async (
+    {
+      productId,
+      payload,
+    }: {
+      productId: string
+      payload: ProductImageReorder
+    },
+    { rejectWithValue },
+  ) => {
+    try {
+      const response = await productService.reorderProductImages(
+        productId,
+        payload,
+      )
+
+      return response.images
+    } catch {
+      return rejectWithValue('No se pudo reordenar la galería.')
+    }
+  },
+)
+
 const productsSlice = createSlice({
   name: 'products',
   initialState,
+
   reducers: {
     clearProductsError(state) {
       state.error = null
     },
+
+    clearProductImagesError(state) {
+      state.imagesError = null
+    },
+
+    clearProductImages(state) {
+      state.images = []
+      state.imagesError = null
+      state.imagesLoading = false
+      state.imagesSaving = false
+    },
   },
+
   extraReducers: (builder) => {
     builder
-      // CARGA DE CATÁLOGO
+      // ==============================
+      // CATÁLOGO
+      // ==============================
+
       .addCase(fetchProducts.pending, (state) => {
         state.loading = true
         state.error = null
@@ -127,7 +275,10 @@ const productsSlice = createSlice({
         state.error = action.payload as string
       })
 
-      // CARGA DE PRODUCTOS PROPIOS
+      // ==============================
+      // PRODUCTOS PROPIOS
+      // ==============================
+
       .addCase(fetchMyProducts.pending, (state) => {
         state.loading = true
         state.error = null
@@ -141,7 +292,10 @@ const productsSlice = createSlice({
         state.error = action.payload as string
       })
 
+      // ==============================
       // CREACIÓN
+      // ==============================
+
       .addCase(createProduct.pending, (state) => {
         state.saving = true
         state.error = null
@@ -155,7 +309,10 @@ const productsSlice = createSlice({
         state.error = action.payload as string
       })
 
+      // ==============================
       // ACTUALIZACIÓN
+      // ==============================
+
       .addCase(updateProduct.pending, (state) => {
         state.saving = true
         state.error = null
@@ -176,7 +333,10 @@ const productsSlice = createSlice({
         state.error = action.payload as string
       })
 
+      // ==============================
       // PUBLICACIÓN
+      // ==============================
+
       .addCase(publishProduct.pending, (state) => {
         state.saving = true
         state.error = null
@@ -197,7 +357,10 @@ const productsSlice = createSlice({
         state.error = action.payload as string
       })
 
+      // ==============================
       // ARCHIVADO
+      // ==============================
+
       .addCase(archiveProduct.pending, (state) => {
         state.saving = true
         state.error = null
@@ -217,9 +380,109 @@ const productsSlice = createSlice({
         state.saving = false
         state.error = action.payload as string
       })
+
+      // ==============================
+      // CARGAR IMÁGENES
+      // ==============================
+
+      .addCase(fetchProductImages.pending, (state) => {
+        state.imagesLoading = true
+        state.imagesError = null
+      })
+      .addCase(fetchProductImages.fulfilled, (state, action) => {
+        state.imagesLoading = false
+        state.images = action.payload.images
+      })
+      .addCase(fetchProductImages.rejected, (state, action) => {
+        state.imagesLoading = false
+        state.imagesError = action.payload as string
+      })
+
+      // ==============================
+      // SUBIR IMAGEN
+      // ==============================
+
+      .addCase(uploadProductImage.pending, (state) => {
+        state.imagesSaving = true
+        state.imagesError = null
+      })
+      .addCase(uploadProductImage.fulfilled, (state, action) => {
+        state.imagesSaving = false
+        state.images.push(action.payload)
+        state.images.sort((a, b) => a.position - b.position)
+      })
+      .addCase(uploadProductImage.rejected, (state, action) => {
+        state.imagesSaving = false
+        state.imagesError = action.payload as string
+      })
+
+      // ==============================
+      // REEMPLAZAR IMAGEN
+      // ==============================
+
+      .addCase(replaceProductImage.pending, (state) => {
+        state.imagesSaving = true
+        state.imagesError = null
+      })
+      .addCase(replaceProductImage.fulfilled, (state, action) => {
+        state.imagesSaving = false
+
+        const index = state.images.findIndex(
+          (image) => image.id === action.payload.id,
+        )
+
+        if (index !== -1) {
+          state.images[index] = action.payload
+        }
+      })
+      .addCase(replaceProductImage.rejected, (state, action) => {
+        state.imagesSaving = false
+        state.imagesError = action.payload as string
+      })
+
+      // ==============================
+      // ELIMINAR IMAGEN
+      // ==============================
+
+      .addCase(deleteProductImage.pending, (state) => {
+        state.imagesSaving = true
+        state.imagesError = null
+      })
+      .addCase(deleteProductImage.fulfilled, (state, action) => {
+        state.imagesSaving = false
+
+        state.images = state.images.filter(
+          (image) => image.id !== action.payload.imageId,
+        )
+      })
+      .addCase(deleteProductImage.rejected, (state, action) => {
+        state.imagesSaving = false
+        state.imagesError = action.payload as string
+      })
+
+      // ==============================
+      // REORDENAR GALERÍA
+      // ==============================
+
+      .addCase(reorderProductImages.pending, (state) => {
+        state.imagesSaving = true
+        state.imagesError = null
+      })
+      .addCase(reorderProductImages.fulfilled, (state, action) => {
+        state.imagesSaving = false
+        state.images = action.payload
+      })
+      .addCase(reorderProductImages.rejected, (state, action) => {
+        state.imagesSaving = false
+        state.imagesError = action.payload as string
+      })
   },
 })
 
-export const { clearProductsError } = productsSlice.actions
+export const {
+  clearProductsError,
+  clearProductImagesError,
+  clearProductImages,
+} = productsSlice.actions
 
 export default productsSlice.reducer

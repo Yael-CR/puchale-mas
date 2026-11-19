@@ -1,9 +1,8 @@
+
 import { useCallback } from 'react'
 
 import { useAppSelector } from '../../../app/hooks/useAppSelector'
 import { useAppDispatch } from '../../../app/hooks/useAppDispatch'
-
-
 
 import {
   fetchMyProducts,
@@ -12,12 +11,20 @@ import {
   updateProduct,
   publishProduct,
   archiveProduct,
+  fetchProductImages,
+  uploadProductImage,
+  replaceProductImage,
+  deleteProductImage,
+  reorderProductImages,
   clearProductsError,
+  clearProductImagesError,
+  clearProductImages,
 } from '../store/productsSlice'
 
 import type {
   ProductCreate,
   ProductUpdate,
+  ProductImageReorder,
 } from '../types/product'
 
 export function useProducts() {
@@ -25,13 +32,17 @@ export function useProducts() {
 
   const products = useAppSelector((state) => state.products)
 
-  const loadProducts = useCallback(() => {
-    return dispatch(fetchProducts())
-  }, [dispatch])
+  // PRODUCTOS
 
-  const loadMyProducts = useCallback(() => {
-    return dispatch(fetchMyProducts())
-  }, [dispatch])
+  const loadProducts = useCallback(
+    () => dispatch(fetchProducts()),
+    [dispatch],
+  )
+
+  const loadMyProducts = useCallback(
+    () => dispatch(fetchMyProducts()),
+    [dispatch],
+  )
 
   const addProduct = useCallback(
     (payload: ProductCreate) => dispatch(createProduct(payload)),
@@ -58,8 +69,49 @@ export function useProducts() {
     dispatch(clearProductsError())
   }, [dispatch])
 
+  // IMÁGENES
+
+  const loadProductImages = useCallback(
+    (productId: string) => dispatch(fetchProductImages(productId)),
+    [dispatch],
+  )
+
+  const uploadImage = useCallback(
+    (productId: string, file: File) =>
+      dispatch(uploadProductImage({ productId, file })),
+    [dispatch],
+  )
+
+  const replaceImage = useCallback(
+    (productId: string, imageId: string, file: File) =>
+      dispatch(replaceProductImage({ productId, imageId, file })),
+    [dispatch],
+  )
+
+  const deleteImage = useCallback(
+    (productId: string, imageId: string) =>
+      dispatch(deleteProductImage({ productId, imageId })),
+    [dispatch],
+  )
+
+  const reorderImages = useCallback(
+    (productId: string, payload: ProductImageReorder) =>
+      dispatch(reorderProductImages({ productId, payload })),
+    [dispatch],
+  )
+
+  const clearImagesError = useCallback(() => {
+    dispatch(clearProductImagesError())
+  }, [dispatch])
+
+  const resetImages = useCallback(() => {
+    dispatch(clearProductImages())
+  }, [dispatch])
+
   return {
     ...products,
+
+    // Productos
     loadProducts,
     loadMyProducts,
     addProduct,
@@ -67,5 +119,14 @@ export function useProducts() {
     publish,
     archive,
     clearError,
+
+    // Imágenes
+    loadProductImages,
+    uploadImage,
+    replaceImage,
+    deleteImage,
+    reorderImages,
+    clearImagesError,
+    resetImages,
   }
 }
