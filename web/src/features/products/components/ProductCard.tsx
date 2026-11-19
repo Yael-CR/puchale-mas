@@ -1,6 +1,12 @@
 
 import { Link } from 'react-router-dom'
-import { Pencil, Archive, ExternalLink } from 'lucide-react'
+import {
+  Pencil,
+  Archive,
+  ExternalLink,
+  Gavel,
+  Send,
+} from 'lucide-react'
 
 import type { Product } from '../types/product'
 import ProductStatusBadge from './ProductStatusBadge'
@@ -8,11 +14,15 @@ import ProductStatusBadge from './ProductStatusBadge'
 interface ProductCardProps {
   product: Product
   onArchive: (productId: string) => void
+  onPublish: (productId: string) => void
+  saving: boolean
 }
 
 export default function ProductCard({
   product,
   onArchive,
+  onPublish,
+  saving,
 }: ProductCardProps) {
   return (
     <article className="overflow-hidden rounded-2xl border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900">
@@ -36,7 +46,7 @@ export default function ProductCard({
           {new Date(product.updated_at).toLocaleDateString('es-MX')}
         </span>
 
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <Link
             to={`/productos/${product.id}/editar`}
             className="inline-flex items-center gap-2 rounded-lg border border-zinc-300 px-3 py-2 text-sm font-medium text-zinc-700 transition hover:bg-zinc-100 dark:border-zinc-700 dark:text-zinc-200 dark:hover:bg-zinc-800"
@@ -45,22 +55,45 @@ export default function ProductCard({
             Editar
           </Link>
 
-          {product.status === 'published' && (
-            <Link
-              to={`/productos/${product.id}`}
-              className="inline-flex items-center gap-2 rounded-lg bg-lime-500 px-3 py-2 text-sm font-medium text-black transition hover:bg-lime-400"
+          {product.status === 'draft' && (
+            <button
+              type="button"
+              onClick={() => onPublish(product.id)}
+              disabled={saving}
+              className="inline-flex items-center gap-2 rounded-lg bg-lime-500 px-3 py-2 text-sm font-semibold text-black transition hover:bg-lime-400 disabled:cursor-not-allowed disabled:opacity-50"
             >
-              <ExternalLink size={15} />
-              Ver
-            </Link>
+              <Send size={15} />
+              Publicar producto
+            </button>
+          )}
+
+          {product.status === 'published' && (
+            <>
+              <Link
+                to={`/productos/${product.id}`}
+                className="inline-flex items-center gap-2 rounded-lg bg-lime-500 px-3 py-2 text-sm font-medium text-black transition hover:bg-lime-400"
+              >
+                <ExternalLink size={15} />
+                Ver
+              </Link>
+
+              <Link
+                to={`/subastas/nueva/${product.id}`}
+                className="inline-flex items-center gap-2 rounded-lg border border-lime-500 px-3 py-2 text-sm font-medium text-lime-700 transition hover:bg-lime-50 dark:text-lime-400 dark:hover:bg-lime-950"
+              >
+                <Gavel size={15} />
+                Crear subasta
+              </Link>
+            </>
           )}
 
           {product.status !== 'archived' && (
             <button
               type="button"
               onClick={() => onArchive(product.id)}
+              disabled={saving}
               title="Archivar producto"
-              className="rounded-lg border border-zinc-300 p-2 text-zinc-500 transition hover:border-red-500 hover:text-red-500 dark:border-zinc-700"
+              className="rounded-lg border border-zinc-300 p-2 text-zinc-500 transition hover:border-red-500 hover:text-red-500 disabled:cursor-not-allowed disabled:opacity-50 dark:border-zinc-700"
             >
               <Archive size={17} />
             </button>

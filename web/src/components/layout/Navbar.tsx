@@ -39,6 +39,14 @@ function Navbar() {
               Catálogo
             </NavLink>
 
+            <NavLink
+              to="/productos"
+              end
+              className={navLinkClass}
+            >
+              Mis productos
+            </NavLink>
+
             <Link
               to="/subastas"
               className="whitespace-nowrap text-[13px] font-medium text-text-secondary transition-colors hover:text-text-primary"

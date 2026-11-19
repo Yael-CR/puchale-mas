@@ -10,8 +10,10 @@ export default function ProductsPage() {
   const {
     myProducts,
     loading,
+    saving,
     error,
     loadMyProducts,
+    publish,
     archive,
     clearError,
   } = useProducts()
@@ -19,6 +21,16 @@ export default function ProductsPage() {
   useEffect(() => {
     loadMyProducts()
   }, [loadMyProducts])
+
+  const handlePublish = async (productId: string) => {
+    const confirmed = window.confirm(
+      '¿Deseas publicar este producto? Una vez publicado estará disponible en el catálogo y podrás crear una subasta.',
+    )
+
+    if (!confirmed) return
+
+    await publish(productId)
+  }
 
   const handleArchive = async (productId: string) => {
     const confirmed = window.confirm(
@@ -96,6 +108,8 @@ export default function ProductsPage() {
               key={product.id}
               product={product}
               onArchive={handleArchive}
+              onPublish={handlePublish}
+              saving={saving}
             />
           ))}
         </div>

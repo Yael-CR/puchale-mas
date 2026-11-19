@@ -5,7 +5,6 @@ import { LoaderCircle, Save } from 'lucide-react'
 import type {
   Product,
   ProductCreate,
-  ProductUpdate,
 } from '../types/product'
 
 interface ProductFormProps {
