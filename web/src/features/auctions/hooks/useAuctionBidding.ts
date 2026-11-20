@@ -8,7 +8,8 @@ import {
   getBidRequestStatus,
 } from '../api/auctionService'
 
-import { fetchAuctionById } from '../store/auctionsSlice'
+
+import { refreshAuctionById } from '../store/auctionsSlice'
 
 import type {
   AuctionBid,
@@ -122,12 +123,12 @@ export function useAuctionBidding(auctionId: string) {
   }, [requestId, requestStatus])
 
   // Actualizar precio e historial cuando la puja sea aceptada.
-  useEffect(() => {
+ useEffect(() => {
     if (requestStatus !== 'accepted') return
 
-    dispatch(fetchAuctionById(auctionId))
+    dispatch(refreshAuctionById(auctionId))
     void refreshHistory()
-  }, [requestStatus, auctionId, dispatch, refreshHistory])
+    }, [requestStatus, auctionId, dispatch, refreshHistory])
 
   const pending =
     submitting ||

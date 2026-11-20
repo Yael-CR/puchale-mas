@@ -1,9 +1,11 @@
 
 import { createAsyncThunk, createSlice } from '@reduxjs/toolkit'
+
 import {
   getAuctions,
   getAuctionById,
 } from '../api/auctionService'
+
 import type { Auction } from '../types/auction'
 
 // ==========================================
@@ -23,7 +25,7 @@ export const fetchAuctions = createAsyncThunk(
 )
 
 // ==========================================
-// Obtener detalle de una subasta
+// Obtener detalle inicial de una subasta
 // ==========================================
 export const fetchAuctionById = createAsyncThunk(
   'auctions/fetchById',
@@ -33,6 +35,23 @@ export const fetchAuctionById = createAsyncThunk(
     } catch {
       return thunkAPI.rejectWithValue(
         'No fue posible cargar el detalle de la subasta.',
+      )
+    }
+  },
+)
+
+// ==========================================
+// Actualizar detalle silenciosamente
+// No activa estados de carga de la página
+// ==========================================
+export const refreshAuctionById = createAsyncThunk(
+  'auctions/refreshById',
+  async (auctionId: string, thunkAPI) => {
+    try {
+      return await getAuctionById(auctionId)
+    } catch {
+      return thunkAPI.rejectWithValue(
+        'No fue posible actualizar el detalle de la subasta.',
       )
     }
   },
@@ -68,6 +87,7 @@ const auctionsSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
+      // Catálogo
       .addCase(fetchAuctions.pending, (state) => {
         state.loading = true
         state.error = null
@@ -81,6 +101,7 @@ const auctionsSlice = createSlice({
         state.error = action.payload as string
       })
 
+      // Carga inicial del detalle
       .addCase(fetchAuctionById.pending, (state) => {
         state.detailLoading = true
         state.error = null
@@ -92,6 +113,11 @@ const auctionsSlice = createSlice({
       .addCase(fetchAuctionById.rejected, (state, action) => {
         state.detailLoading = false
         state.error = action.payload as string
+      })
+
+      // Actualización silenciosa del detalle
+      .addCase(refreshAuctionById.fulfilled, (state, action) => {
+        state.selectedAuction = action.payload
       })
   },
 })
