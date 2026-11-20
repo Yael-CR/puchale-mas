@@ -1,4 +1,3 @@
-
 import { useState } from 'react'
 import { Package } from 'lucide-react'
 
@@ -37,10 +36,13 @@ export default function ProductImageGallery({
   if (!mainImage?.url) {
     return (
       <section>
-        <div className="flex aspect-square flex-col items-center justify-center gap-4 rounded-2xl border border-border bg-surface text-text-muted">
-          <Package size={72} strokeWidth={1} />
+        <div className="flex aspect-[4/3] flex-col items-center justify-center gap-3 rounded-xl border border-border bg-surface text-text-muted sm:rounded-2xl">
+          <Package
+            className="h-12 w-12 sm:h-16 sm:w-16"
+            strokeWidth={1}
+          />
 
-          <span className="text-sm">
+          <span className="px-4 text-center text-xs sm:text-sm">
             Este producto todavía no tiene imágenes
           </span>
         </div>
@@ -50,8 +52,8 @@ export default function ProductImageGallery({
 
   return (
     <section>
-      {/* Imagen principal */}
-      <div className="aspect-square overflow-hidden rounded-2xl border border-border bg-surface">
+      {/* Imagen principal: 4/3 para evitar franjas vacías con fotos horizontales */}
+      <div className="aspect-[4/3] overflow-hidden rounded-xl border border-border bg-surface sm:rounded-2xl">
         <button
           type="button"
           onClick={() => setLightboxOpen(true)}
@@ -64,15 +66,15 @@ export default function ProductImageGallery({
             className="h-full w-full object-contain"
           />
 
-          <span className="absolute bottom-4 right-4 rounded-full bg-black/65 px-3 py-2 text-xs font-medium text-white opacity-0 transition-opacity group-hover:opacity-100">
+          <span className="absolute bottom-3 right-3 rounded-full bg-black/65 px-3 py-1.5 text-xs font-medium text-white opacity-0 transition-opacity group-hover:opacity-100">
             Ampliar imagen
           </span>
         </button>
       </div>
 
-      {/* Miniaturas */}
+      {/* Miniaturas compactas */}
       {orderedImages.length > 1 && (
-        <div className="mt-4 grid grid-cols-4 gap-3">
+        <div className="mt-2.5 grid grid-cols-5 gap-2 sm:mt-3">
           {orderedImages.map((image) => {
             const isSelected = mainImage.id === image.id
 
@@ -83,7 +85,7 @@ export default function ProductImageGallery({
                 onClick={() => setSelectedImageId(image.id)}
                 aria-label={`Ver imagen ${image.position + 1}`}
                 aria-pressed={isSelected}
-                className={`aspect-square overflow-hidden rounded-lg border bg-surface transition-all duration-200 focus-visible:outline-2 focus-visible:outline-brand ${
+                className={`aspect-square overflow-hidden rounded-md border bg-surface transition-all duration-200 focus-visible:outline-2 focus-visible:outline-brand sm:rounded-lg ${
                   isSelected
                     ? 'border-brand ring-2 ring-brand/30'
                     : 'border-border opacity-70 hover:border-brand/50 hover:opacity-100'

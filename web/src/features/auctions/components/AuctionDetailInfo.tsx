@@ -1,4 +1,4 @@
-
+import { useState } from 'react'
 import { Gavel } from 'lucide-react'
 
 import ProductImageGallery from './ProductImageGallery'
@@ -30,91 +30,124 @@ const auctionTypeLabels: Record<string, string> = {
   exclusive: 'Subasta exclusiva',
 }
 
+// Descripciones más largas que esto se muestran colapsadas.
+const DESCRIPTION_COLLAPSE_THRESHOLD = 140
+
 export default function AuctionDetailInfo({
   auction,
 }: AuctionDetailInfoProps) {
-  return (
-    <section className="grid min-w-0 grid-cols-1 items-start gap-6 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)] lg:gap-10">
-      <div className="min-w-0">
-        <ProductImageGallery
-          images={auction.product.images ?? []}
-          title={auction.product.title}
-        />
-      </div>
+  const [expanded, setExpanded] = useState(false)
 
-      <div className="min-w-0">
-        <div className="mb-4 flex flex-wrap items-center gap-2">
-          <span className="rounded-full bg-brand/10 px-3 py-1.5 text-xs font-bold text-brand">
+  const description = auction.product.description
+  const isLongDescription =
+    (description?.length ?? 0) > DESCRIPTION_COLLAPSE_THRESHOLD
+
+  return (
+    <section className="min-w-0">
+      {/* Encabezado: lo primero que se ve, antes que la imagen */}
+      <header className="mb-4 sm:mb-5">
+        <div className="mb-2 flex flex-wrap items-center gap-2">
+          <span className="rounded-full bg-brand/10 px-2.5 py-1 text-[11px] font-bold text-brand sm:px-3 sm:py-1.5 sm:text-xs">
             {auctionTypeLabels[auction.type] ?? auction.type}
           </span>
 
-          <span className="rounded-full border border-border px-3 py-1.5 text-xs text-text-secondary">
+          <span className="rounded-full border border-border px-2.5 py-1 text-[11px] text-text-secondary sm:px-3 sm:py-1.5 sm:text-xs">
             {statusLabels[auction.status] ?? auction.status}
           </span>
         </div>
 
-        <h1 className="break-words text-2xl font-bold leading-tight text-text-primary sm:text-3xl lg:text-4xl">
+        <h1 className="break-words text-xl font-bold leading-tight text-text-primary sm:text-2xl lg:text-3xl">
           {auction.product.title}
         </h1>
 
         {auction.product.condition && (
-          <p className="mt-3 text-sm text-text-secondary">
+          <p className="mt-1.5 text-xs text-text-secondary sm:text-sm">
             Condición: {auction.product.condition}
           </p>
         )}
+      </header>
 
-        {auction.product.description && (
-          <div className="mt-6">
-            <h2 className="mb-2 text-sm font-bold text-text-primary">
-              Descripción
-            </h2>
+      <div className="grid grid-cols-1 items-start gap-4 md:grid-cols-2 md:gap-6">
+        {/* Galería acotada para que no domine la pantalla */}
+        <div className="mx-auto w-full min-w-0 max-w-xs sm:max-w-sm md:max-w-none">
+          <ProductImageGallery
+            images={auction.product.images ?? []}
+            title={auction.product.title}
+          />
+        </div>
 
-            <p className="whitespace-pre-line text-sm leading-7 text-text-secondary">
-              {auction.product.description}
-            </p>
-          </div>
-        )}
+        <div className="min-w-0">
+          {/* Resumen de precio compacto */}
+          <div className="rounded-xl border border-border bg-surface p-3.5 sm:rounded-2xl sm:p-5">
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0">
+                <p className="text-xs text-text-secondary sm:text-sm">
+                  Precio actual
+                </p>
 
-        <div className="mt-7 rounded-2xl border border-border bg-surface p-4 sm:p-6">
-          <p className="text-sm text-text-secondary">
-            Precio actual
-          </p>
+                <p className="mt-1 break-words text-2xl font-bold text-brand sm:text-3xl">
+                  {currencyFormatter.format(auction.current_price)}
+                </p>
+              </div>
 
-          <p className="mt-2 break-words text-3xl font-bold text-brand sm:text-4xl">
-            {currencyFormatter.format(auction.current_price)}
-          </p>
-
-          <div className="mt-5 grid grid-cols-2 gap-3 border-t border-border pt-4 sm:gap-5 sm:pt-5">
-            <div className="min-w-0">
-              <p className="text-xs text-text-secondary">
-                Precio inicial
-              </p>
-
-              <p className="mt-1 break-words text-sm font-semibold text-text-primary sm:text-base">
-                {currencyFormatter.format(auction.starting_price)}
-              </p>
+              {auction.status === 'active' && (
+                <span className="flex shrink-0 items-center gap-1.5 rounded-full bg-background px-2.5 py-1 text-[11px] text-text-secondary sm:text-xs">
+                  <Gavel size={13} className="shrink-0" />
+                  En curso
+                </span>
+              )}
             </div>
 
-            <div className="min-w-0">
-              <p className="text-xs text-text-secondary">
-                Incremento mínimo
-              </p>
+            <div className="mt-3 grid grid-cols-2 gap-3 border-t border-border pt-3 sm:mt-4 sm:gap-5 sm:pt-4">
+              <div className="min-w-0">
+                <p className="text-[11px] text-text-secondary sm:text-xs">
+                  Precio inicial
+                </p>
 
-              <p className="mt-1 break-words text-sm font-semibold text-text-primary sm:text-base">
-                {currencyFormatter.format(auction.increment_amount)}
-              </p>
+                <p className="mt-0.5 break-words text-sm font-semibold text-text-primary">
+                  {currencyFormatter.format(auction.starting_price)}
+                </p>
+              </div>
+
+              <div className="min-w-0">
+                <p className="text-[11px] text-text-secondary sm:text-xs">
+                  Incremento mínimo
+                </p>
+
+                <p className="mt-0.5 break-words text-sm font-semibold text-text-primary">
+                  {currencyFormatter.format(auction.increment_amount)}
+                </p>
+              </div>
             </div>
           </div>
 
-          <div className="mt-5 flex items-start gap-2 border-t border-border pt-4 text-sm text-text-secondary">
-            <Gavel size={17} className="mt-0.5 shrink-0" />
+          {/* Descripción colapsable */}
+          {description && (
+            <div className="mt-4 sm:mt-5">
+              <h2 className="mb-1.5 text-sm font-bold text-text-primary">
+                Descripción
+              </h2>
 
-            <span>
-              {auction.status === 'active'
-                ? 'Esta subasta está en curso.'
-                : `Estado: ${statusLabels[auction.status] ?? auction.status}`}
-            </span>
-          </div>
+              <p
+                className={`whitespace-pre-line text-sm leading-6 text-text-secondary ${
+                  isLongDescription && !expanded ? 'line-clamp-3' : ''
+                }`}
+              >
+                {description}
+              </p>
+
+              {isLongDescription && (
+                <button
+                  type="button"
+                  onClick={() => setExpanded((prev) => !prev)}
+                  aria-expanded={expanded}
+                  className="mt-1.5 min-h-8 text-sm font-semibold text-brand transition-colors hover:underline focus-visible:outline-2 focus-visible:outline-brand"
+                >
+                  {expanded ? 'Ver menos' : 'Ver más'}
+                </button>
+              )}
+            </div>
+          )}
         </div>
       </div>
     </section>

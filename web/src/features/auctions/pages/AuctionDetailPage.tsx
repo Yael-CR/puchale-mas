@@ -1,4 +1,3 @@
-
 import { Link, useParams } from 'react-router-dom'
 import { ArrowLeft } from 'lucide-react'
 
@@ -72,33 +71,44 @@ export default function AuctionDetailPage() {
   }
 
   return (
-    <main className="min-h-[calc(100vh-65px)] bg-background px-3 py-5 sm:px-6 sm:py-8 lg:px-8">
+    <main className="min-h-[calc(100vh-65px)] bg-background px-3 py-4 sm:px-6 sm:py-8 lg:px-8">
       <div className="mx-auto w-full max-w-[1200px]">
         <Link
           to="/subastas"
-          className="mb-5 inline-flex min-h-10 items-center gap-2 text-sm text-text-secondary transition-colors hover:text-brand sm:mb-7"
+          className="mb-3 inline-flex min-h-10 items-center gap-2 text-sm text-text-secondary transition-colors hover:text-brand sm:mb-6"
         >
           <ArrowLeft size={17} />
           Volver a subastas
         </Link>
 
-        <AuctionDetailInfo auction={auction} />
+        {/*
+          Móvil/tablet: una columna (producto y luego participación).
+          Escritorio: dos columnas. Izquierda = producto, derecha = panel
+          de puja + historial, fijo mientras se hace scroll.
+        */}
+        <div className="grid grid-cols-1 gap-4 sm:gap-6 lg:grid-cols-[minmax(0,1fr)_380px] lg:items-start xl:grid-cols-[minmax(0,1fr)_420px]">
+          <section className="min-w-0">
+            <AuctionDetailInfo auction={auction} />
+          </section>
 
-        <AuctionParticipation
-          auctionStatus={auction.status}
-          bids={bids}
-          historyLoading={historyLoading}
-          historyError={historyError}
-          realtimeStatus={realtimeStatus}
-          lastRealtimeBidId={lastRealtimeBidId}
-          currentUserId={currentUserId}
-          pending={pending}
-          requestStatus={requestStatus}
-          requestError={requestError}
-          rejectionReason={rejectionReason}
-          submitBid={submitBid}
-          refreshHistory={refreshHistory}
-        />
+          <aside className="min-w-0 lg:sticky lg:top-20">
+            <AuctionParticipation
+              auctionStatus={auction.status}
+              bids={bids}
+              historyLoading={historyLoading}
+              historyError={historyError}
+              realtimeStatus={realtimeStatus}
+              lastRealtimeBidId={lastRealtimeBidId}
+              currentUserId={currentUserId}
+              pending={pending}
+              requestStatus={requestStatus}
+              requestError={requestError}
+              rejectionReason={rejectionReason}
+              submitBid={submitBid}
+              refreshHistory={refreshHistory}
+            />
+          </aside>
+        </div>
       </div>
     </main>
   )

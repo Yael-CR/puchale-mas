@@ -1,6 +1,6 @@
-
 import { Link, NavLink } from 'react-router-dom'
 import ThemeToggle from './ThemeToggle'
+import puchaleIcon from '../../images/puchale-icon.png'
 
 function Navbar() {
   const navLinkClass = ({ isActive }: { isActive: boolean }) =>
@@ -12,20 +12,20 @@ function Navbar() {
 
   return (
     <nav className="sticky top-0 z-50 w-full border-b border-border bg-surface">
-      <div className="mx-auto flex min-h-[65px] w-full max-w-[1600px] items-center justify-between gap-3 px-3 sm:px-6 lg:px-8">
+      <div className="mx-auto flex min-h-[72px] w-full max-w-[1600px] items-center justify-between gap-3 px-3 sm:px-6 lg:px-8">
 
         {/* Logo y navegación principal */}
-        <div className="flex min-w-0 items-center gap-5 xl:gap-7">
+        <div className="flex min-w-0 items-center gap-6 xl:gap-10">
 
           <Link
             to="/"
             aria-label="Puchale+ inicio"
-            className="flex shrink-0 items-center"
+            className="group flex shrink-0 items-center"
           >
             <img
-              src="/images/puchale-logo.svg"
+              src={puchaleIcon}
               alt="Puchale+"
-              className="h-8 w-auto max-w-[112px] object-contain sm:h-9 sm:max-w-[150px]"
+              className="h-12 w-auto max-w-[200px] object-contain transition-transform duration-200 group-hover:scale-105 sm:h-14 sm:max-w-[260px]"
             />
           </Link>
 

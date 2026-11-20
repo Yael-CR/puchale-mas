@@ -1,4 +1,3 @@
-
 import BidRequestPanel from './BidRequestPanel'
 import AuctionBidHistory from './AuctionBidHistory'
 
@@ -41,25 +40,32 @@ export default function AuctionParticipation({
   refreshHistory,
 }: AuctionParticipationProps) {
   return (
-    <div className="mt-8 grid min-w-0 grid-cols-1 items-start gap-6 lg:mt-10 lg:grid-cols-2 lg:gap-8">
-      <BidRequestPanel
-        auctionStatus={auctionStatus}
-        pending={pending}
-        requestStatus={requestStatus}
-        requestError={requestError}
-        rejectionReason={rejectionReason}
-        submitBid={submitBid}
-      />
+    // Una sola columna: vive dentro del panel lateral de la página.
+    // En escritorio ocupa como máximo la altura visible; el panel de puja
+    // siempre queda a la vista y solo el historial se desplaza.
+    <div className="flex min-w-0 flex-col gap-4 lg:max-h-[calc(100vh-6.5rem)]">
+      <div className="shrink-0">
+        <BidRequestPanel
+          auctionStatus={auctionStatus}
+          pending={pending}
+          requestStatus={requestStatus}
+          requestError={requestError}
+          rejectionReason={rejectionReason}
+          submitBid={submitBid}
+        />
+      </div>
 
-      <AuctionBidHistory
-        bids={bids}
-        historyLoading={historyLoading}
-        historyError={historyError}
-        realtimeStatus={realtimeStatus}
-        lastRealtimeBidId={lastRealtimeBidId}
-        currentUserId={currentUserId}
-        refreshHistory={refreshHistory}
-      />
+      <div className="flex min-h-0 flex-col lg:flex-auto">
+        <AuctionBidHistory
+          bids={bids}
+          historyLoading={historyLoading}
+          historyError={historyError}
+          realtimeStatus={realtimeStatus}
+          lastRealtimeBidId={lastRealtimeBidId}
+          currentUserId={currentUserId}
+          refreshHistory={refreshHistory}
+        />
+      </div>
     </div>
   )
 }
