@@ -91,3 +91,36 @@ export interface AuctionResponse {
   closed_at: string | null
   updated_at: string
 }
+
+
+export type BidRequestStatus =
+  | 'queued'
+  | 'processing'
+  | 'accepted'
+  | 'rejected'
+  | 'expired'
+
+export interface AuctionBid {
+  id: string
+  auction_id: string
+  bidder_id: string
+  amount: number
+  sequence_no: number
+  accepted_at: string
+}
+
+export interface BidRequestStatusResponse {
+  id: string
+  auction_id: string
+  status: BidRequestStatus
+  rejection_reason: string | null
+  sequence_no: number | null
+  received_at: string
+  processed_at: string | null
+  expired_at: string | null
+}
+
+export interface BidRequestCreateResponse {
+  id: string
+  status: BidRequestStatus
+}

@@ -6,6 +6,9 @@ import type {
   AuctionCreatePayload,
   AuctionResponse,
   AuctionUpdatePayload,
+  AuctionBid,
+  BidRequestCreateResponse,
+  BidRequestStatusResponse,
 } from '../types/auction'
 
 // Obtener el catálogo público de subastas
@@ -57,6 +60,47 @@ export async function publishAuction(
 ): Promise<AuctionResponse> {
   const response = await api.post<AuctionResponse>(
     `/auctions/${auctionId}/publish`,
+  )
+
+  return response.data
+}
+
+// ==========================================
+// PUJAS
+// ==========================================
+
+// Enviar una solicitud de puja
+export async function createBidRequest(
+  auctionId: string,
+  idempotencyKey: string,
+): Promise<BidRequestCreateResponse> {
+  const response = await api.post<BidRequestCreateResponse>(
+    `/auctions/${auctionId}/bids`,
+    {
+      idempotency_key: idempotencyKey,
+    },
+  )
+
+  return response.data
+}
+
+// Consultar el estado de una solicitud de puja
+export async function getBidRequestStatus(
+  requestId: string,
+): Promise<BidRequestStatusResponse> {
+  const response = await api.get<BidRequestStatusResponse>(
+    `/auctions/bid-requests/${requestId}`,
+  )
+
+  return response.data
+}
+
+// Obtener el historial de pujas aceptadas
+export async function getAuctionBids(
+  auctionId: string,
+): Promise<AuctionBid[]> {
+  const response = await api.get<AuctionBid[]>(
+    `/auctions/${auctionId}/bids`,
   )
 
   return response.data
