@@ -2,6 +2,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 
 import { useAppDispatch } from '../../../app/hooks/useAppDispatch'
+import { supabase } from '../../../lib/supabase'
 
 import {
   createBidRequest,
@@ -22,8 +23,27 @@ const terminalStatuses: BidRequestStatus[] = [
   'expired',
 ]
 
-const HISTORY_POLLING_INTERVAL = 2000
 const REQUEST_POLLING_INTERVAL = 1500
+
+// Combinar pujas evitando duplicados y ordenando las más recientes primero.
+function mergeBids(
+  current: AuctionBid[],
+  incoming: AuctionBid[],
+): AuctionBid[] {
+  const bidsById = new Map<string, AuctionBid>()
+
+  current.forEach((bid) => {
+    bidsById.set(bid.id, bid)
+  })
+
+  incoming.forEach((bid) => {
+    bidsById.set(bid.id, bid)
+  })
+
+  return Array.from(bidsById.values()).sort(
+    (a, b) => b.sequence_no - a.sequence_no,
+  )
+}
 
 export function useAuctionBidding(auctionId: string) {
   const dispatch = useAppDispatch()
@@ -42,12 +62,12 @@ export function useAuctionBidding(auctionId: string) {
   const [submitting, setSubmitting] = useState(false)
   const [requestError, setRequestError] = useState<string | null>(null)
 
-  // Control de solicitudes y ciclo de vida del historial.
+  // Control del ciclo de vida del historial.
   const historyRequestInProgress = useRef(false)
   const hasLoadedHistory = useRef(false)
   const activeAuctionId = useRef(auctionId)
 
-  // Mantener identificada la subasta actual.
+  // Reiniciar estados cuando cambia la subasta.
   useEffect(() => {
     activeAuctionId.current = auctionId
     historyRequestInProgress.current = false
@@ -62,7 +82,7 @@ export function useAuctionBidding(auctionId: string) {
     setRequestError(null)
   }, [auctionId])
 
-  // Consultar historial sin recrear la función por cambios en bids.
+  // Consultar historial mediante HTTP.
   const refreshHistory = useCallback(async () => {
     if (
       !auctionId ||
@@ -84,7 +104,9 @@ export function useAuctionBidding(auctionId: string) {
       // Ignorar respuestas de una subasta anterior.
       if (activeAuctionId.current !== auctionId) return
 
-      setBids(result)
+      // Combinar con eventos recibidos mientras se consultaba HTTP.
+      setBids((current) => mergeBids(current, result))
+
       setHistoryError(null)
       hasLoadedHistory.current = true
     } catch {
@@ -101,20 +123,55 @@ export function useAuctionBidding(auctionId: string) {
     }
   }, [auctionId])
 
-  // Cargar historial al entrar a la subasta.
-  useEffect(() => {
-    void refreshHistory()
-  }, [refreshHistory])
-
-  // Actualizar automáticamente las pujas de todos los participantes.
+  // Suscripción a las pujas aceptadas mediante Supabase Realtime.
   useEffect(() => {
     if (!auctionId) return
 
-    const interval = window.setInterval(() => {
-      void refreshHistory()
-    }, HISTORY_POLLING_INTERVAL)
+    const channel = supabase
+      .channel(`auction-bids-${auctionId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'bids',
+          filter: `auction_id=eq.${auctionId}`,
+        },
+        (payload) => {
+          if (activeAuctionId.current !== auctionId) return
 
-    return () => window.clearInterval(interval)
+          const newBid = payload.new as AuctionBid
+
+          if (
+            !newBid.id ||
+            newBid.auction_id !== auctionId
+          ) {
+            return
+          }
+
+          setBids((current) => mergeBids(current, [newBid]))
+          setHistoryError(null)
+        },
+      )
+      .subscribe((status) => {
+        if (status === 'SUBSCRIBED') {
+          // Sincronizar historial al conectar o reconectar.
+          void refreshHistory()
+        }
+
+        if (
+          status === 'CHANNEL_ERROR' ||
+          status === 'TIMED_OUT'
+        ) {
+          setHistoryError(
+            'Se perdió la conexión en tiempo real. Intentando reconectar.',
+          )
+        }
+      })
+
+    return () => {
+      void supabase.removeChannel(channel)
+    }
   }, [auctionId, refreshHistory])
 
   // Enviar una solicitud de puja.
@@ -181,7 +238,7 @@ export function useAuctionBidding(auctionId: string) {
     return () => window.clearInterval(interval)
   }, [requestId, requestStatus])
 
-  // Actualizar precio e historial cuando nuestra puja sea aceptada.
+  // Actualizar precio cuando nuestra puja sea aceptada.
   useEffect(() => {
     if (requestStatus !== 'accepted') return
 
