@@ -7,11 +7,16 @@ import type {
   BidRequestStatus,
 } from '../types/auction'
 
+import type { RealtimeStatus } from '../hooks/useAuctionBidding'
+
 interface AuctionParticipationProps {
   auctionStatus: string
   bids: AuctionBid[]
   historyLoading: boolean
   historyError: string | null
+  realtimeStatus: RealtimeStatus
+  lastRealtimeBidId: string | null
+  currentUserId: string | null
   pending: boolean
   requestStatus: BidRequestStatus | null
   requestError: string | null
@@ -25,6 +30,9 @@ export default function AuctionParticipation({
   bids,
   historyLoading,
   historyError,
+  realtimeStatus,
+  lastRealtimeBidId,
+  currentUserId,
   pending,
   requestStatus,
   requestError,
@@ -47,6 +55,9 @@ export default function AuctionParticipation({
         bids={bids}
         historyLoading={historyLoading}
         historyError={historyError}
+        realtimeStatus={realtimeStatus}
+        lastRealtimeBidId={lastRealtimeBidId}
+        currentUserId={currentUserId}
         refreshHistory={refreshHistory}
       />
     </div>

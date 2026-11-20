@@ -108,3 +108,38 @@ body {
   min-height: 100vh;
   width: 100%;
 }
+
+
+/* ---------- Animación de nuevas pujas en tiempo real ---------- */
+
+@keyframes bid-realtime-enter {
+  0% {
+    opacity: 0;
+    transform: translateY(8px) scale(0.985);
+    box-shadow: 0 0 0 2px
+      color-mix(in srgb, var(--brand) 45%, transparent);
+  }
+
+  35% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    box-shadow: 0 0 0 2px
+      color-mix(in srgb, var(--brand) 30%, transparent);
+  }
+
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    box-shadow: 0 0 0 0 transparent;
+  }
+}
+
+.bid-realtime-enter {
+  animation: bid-realtime-enter 1.2s ease-out both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bid-realtime-enter {
+    animation: none;
+  }
+}

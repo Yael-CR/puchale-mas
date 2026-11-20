@@ -4,12 +4,16 @@ import { ArrowLeft } from 'lucide-react'
 
 import { useAuctionDetail } from '../hooks/useAuctionDetail'
 import { useAuctionBidding } from '../hooks/useAuctionBidding'
+import { useAuth } from '../../auth/hooks/useAuth'
 
 import AuctionDetailInfo from '../components/AuctionDetailInfo'
 import AuctionParticipation from '../components/AuctionParticipation'
 
 export default function AuctionDetailPage() {
   const { auctionId } = useParams<{ auctionId: string }>()
+  const { session } = useAuth()
+
+  const currentUserId = session?.user.id ?? null
 
   const {
     auction,
@@ -21,6 +25,8 @@ export default function AuctionDetailPage() {
     bids,
     historyLoading,
     historyError,
+    realtimeStatus,
+    lastRealtimeBidId,
     pending,
     requestStatus,
     requestError,
@@ -83,6 +89,9 @@ export default function AuctionDetailPage() {
           bids={bids}
           historyLoading={historyLoading}
           historyError={historyError}
+          realtimeStatus={realtimeStatus}
+          lastRealtimeBidId={lastRealtimeBidId}
+          currentUserId={currentUserId}
           pending={pending}
           requestStatus={requestStatus}
           requestError={requestError}

@@ -17,6 +17,12 @@ import type {
   BidRequestStatus,
 } from '../types/auction'
 
+export type RealtimeStatus =
+  | 'connecting'
+  | 'connected'
+  | 'reconnecting'
+  | 'disconnected'
+
 const terminalStatuses: BidRequestStatus[] = [
   'accepted',
   'rejected',
@@ -52,6 +58,15 @@ export function useAuctionBidding(auctionId: string) {
   const [historyLoading, setHistoryLoading] = useState(false)
   const [historyError, setHistoryError] = useState<string | null>(null)
 
+  const [realtimeStatus, setRealtimeStatus] =
+    useState<RealtimeStatus>('connecting')
+
+  const [lastRealtimeBidId, setLastRealtimeBidId] =
+    useState<string | null>(null)
+
+
+
+
   const [requestId, setRequestId] = useState<string | null>(null)
   const [requestStatus, setRequestStatus] =
     useState<BidRequestStatus | null>(null)
@@ -72,10 +87,12 @@ export function useAuctionBidding(auctionId: string) {
     activeAuctionId.current = auctionId
     historyRequestInProgress.current = false
     hasLoadedHistory.current = false
+    setLastRealtimeBidId(null)
 
     setBids([])
     setHistoryLoading(false)
     setHistoryError(null)
+    setRealtimeStatus('connecting')
     setRequestId(null)
     setRequestStatus(null)
     setRejectionReason(null)
@@ -125,7 +142,12 @@ export function useAuctionBidding(auctionId: string) {
 
   // Suscripción a las pujas aceptadas mediante Supabase Realtime.
   useEffect(() => {
-    if (!auctionId) return
+    if (!auctionId) {
+      setRealtimeStatus('disconnected')
+      return
+    }
+
+    setRealtimeStatus('connecting')
 
     const channel = supabase
       .channel(`auction-bids-${auctionId}`)
@@ -150,11 +172,16 @@ export function useAuctionBidding(auctionId: string) {
           }
 
           setBids((current) => mergeBids(current, [newBid]))
-          setHistoryError(null)
+            setLastRealtimeBidId(newBid.id)
+            setHistoryError(null)
         },
       )
       .subscribe((status) => {
+        if (activeAuctionId.current !== auctionId) return
+
         if (status === 'SUBSCRIBED') {
+          setRealtimeStatus('connected')
+
           // Sincronizar historial al conectar o reconectar.
           void refreshHistory()
         }
@@ -163,9 +190,14 @@ export function useAuctionBidding(auctionId: string) {
           status === 'CHANNEL_ERROR' ||
           status === 'TIMED_OUT'
         ) {
+          setRealtimeStatus('reconnecting')
           setHistoryError(
             'Se perdió la conexión en tiempo real. Intentando reconectar.',
           )
+        }
+
+        if (status === 'CLOSED') {
+          setRealtimeStatus('disconnected')
         }
       })
 
@@ -255,6 +287,7 @@ export function useAuctionBidding(auctionId: string) {
     bids,
     historyLoading,
     historyError,
+    realtimeStatus,
     submitting,
     pending,
     requestStatus,
@@ -262,5 +295,6 @@ export function useAuctionBidding(auctionId: string) {
     rejectionReason,
     submitBid,
     refreshHistory,
+    lastRealtimeBidId,
   }
 }
