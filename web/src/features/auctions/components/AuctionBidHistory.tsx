@@ -16,26 +16,35 @@ const currencyFormatter = new Intl.NumberFormat('es-MX', {
   maximumFractionDigits: 2,
 })
 
+const dateFormatter = new Intl.DateTimeFormat('es-MX', {
+  hour: '2-digit',
+  minute: '2-digit',
+  day: '2-digit',
+  month: 'short',
+})
+
 export default function AuctionBidHistory({
   bids,
   historyLoading,
   historyError,
   refreshHistory,
 }: AuctionBidHistoryProps) {
-  const orderedBids = [...bids].sort(
-    (a, b) => b.sequence_no - a.sequence_no,
-  )
+  // En un chat, los mensajes más antiguos van primero.
+ const orderedBids = [...bids].sort(
+  (a, b) => b.sequence_no - a.sequence_no,
+)
 
   return (
     <section className="overflow-hidden rounded-2xl border border-border bg-surface">
+      {/* Encabezado */}
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border p-4 sm:p-5">
         <div>
           <h2 className="text-lg font-bold text-text-primary">
-            Historial de pujas
+            Actividad de la subasta
           </h2>
 
           <p className="mt-1 text-xs text-text-secondary">
-            Pujas aceptadas en esta subasta.
+            Conversación de pujas aceptadas en tiempo real.
           </p>
         </div>
 
@@ -54,57 +63,87 @@ export default function AuctionBidHistory({
         </button>
       </div>
 
-      <div>
+      {/* Conversación */}
+      <div className="bg-background/40 p-3 sm:p-5">
         {historyError && (
-          <p role="alert" className="px-4 pt-4 text-sm text-red-500 sm:px-5">
+          <p
+            role="alert"
+            className="mb-4 rounded-lg border border-red-500/20 bg-red-500/5 p-3 text-sm text-red-500"
+          >
             {historyError}
           </p>
         )}
 
         {historyLoading && bids.length === 0 ? (
-          <p className="p-6 text-center text-sm text-text-secondary">
-            Cargando historial...
+          <p className="py-10 text-center text-sm text-text-secondary">
+            Cargando conversación...
           </p>
-        ) : bids.length === 0 ? (
-          <div className="px-5 py-10 text-center">
+        ) : orderedBids.length === 0 ? (
+          <div className="py-12 text-center">
             <Gavel
-              size={25}
+              size={28}
               className="mx-auto mb-3 text-text-secondary opacity-60"
             />
 
             <p className="text-sm font-medium text-text-primary">
-              Todavía no hay pujas aceptadas
+              Todavía no hay pujas
             </p>
 
             <p className="mt-1 text-xs text-text-secondary">
-              Cuando se acepte una puja aparecerá aquí.
+              ¡Sé el primero en participar en esta subasta!
             </p>
           </div>
         ) : (
-          <div className="divide-y divide-border">
+          <div
+            className="flex max-h-[520px] flex-col gap-4 overflow-y-auto pr-1"
+            aria-live="polite"
+            aria-relevant="additions"
+          >
             {orderedBids.map((bid) => (
-              <div
+              <article
                 key={bid.id}
-                className="flex items-center justify-between gap-3 px-4 py-4 sm:px-5"
+                className="flex w-full items-start gap-3"
               >
-                <div className="min-w-0">
-                  <p className="text-sm font-semibold text-text-primary">
+                {/* Avatar */}
+                <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-brand/10 text-xs font-bold text-brand">
+                  {bid.bidder_id.slice(0, 2).toUpperCase()}
+                </div>
+
+                {/* Burbuja */}
+                <div className="min-w-0 max-w-[85%] rounded-2xl rounded-tl-sm border border-border bg-surface px-4 py-3 shadow-sm sm:max-w-[75%]">
+                  <div className="mb-2 flex flex-wrap items-center gap-x-3 gap-y-1">
+                    <span className="text-xs font-semibold text-text-primary">
+                      Participante {bid.bidder_id.slice(0, 8)}
+                    </span>
+
+                    <span className="text-[11px] text-text-secondary">
+                      {dateFormatter.format(new Date(bid.accepted_at))}
+                    </span>
+                  </div>
+
+                  <p className="text-xs text-text-secondary">
                     Puja #{bid.sequence_no}
                   </p>
 
-                  <p className="mt-1 text-xs text-text-secondary">
-                    {new Date(bid.accepted_at).toLocaleString('es-MX')}
+                  <p className="mt-1 text-lg font-bold text-brand">
+                    {currencyFormatter.format(bid.amount)}
                   </p>
                 </div>
-
-                <p className="shrink-0 text-base font-bold text-brand sm:text-lg">
-                  {currencyFormatter.format(bid.amount)}
-                </p>
-              </div>
+              </article>
             ))}
           </div>
         )}
       </div>
+
+      {/* Pie */}
+      {orderedBids.length > 0 && (
+        <div className="border-t border-border px-4 py-3 sm:px-5">
+          <p className="text-center text-xs text-text-secondary">
+            {orderedBids.length}{' '}
+            {orderedBids.length === 1 ? 'puja aceptada' : 'pujas aceptadas'}
+          </p>
+        </div>
+      )}
     </section>
   )
 }
