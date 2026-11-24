@@ -45,7 +45,7 @@ export default function BidRequestPanel({
 
         <div>
           <h2 className="text-lg font-bold text-text-primary">
-            Participar en la subasta
+            Participar en la subastas
           </h2>
 
           <p className="mt-0.5 text-xs text-text-secondary">

@@ -6,7 +6,8 @@ import { useAuctionBidding } from '../hooks/useAuctionBidding'
 import { useAuth } from '../../auth/hooks/useAuth'
 
 import AuctionDetailInfo from '../components/AuctionDetailInfo'
-import AuctionParticipation from '../components/AuctionParticipation'
+import BidRequestPanel from '../components/BidRequestPanel'
+import AuctionBidHistory from '../components/AuctionBidHistory'
 
 export default function AuctionDetailPage() {
   const { auctionId } = useParams<{ auctionId: string }>()
@@ -82,31 +83,39 @@ export default function AuctionDetailPage() {
         </Link>
 
         {/*
-          Móvil/tablet: una columna (producto y luego participación).
-          Escritorio: dos columnas. Izquierda = producto, derecha = panel
-          de puja + historial, fijo mientras se hace scroll.
+          Móvil/tablet: una columna (producto → panel de puja → historial).
+          Escritorio: dos columnas.
+            - Izquierda: producto + panel de puja (debajo de la descripción).
+            - Derecha: solo el historial, fijo mientras se hace scroll.
         */}
         <div className="grid grid-cols-1 gap-4 sm:gap-6 lg:grid-cols-[minmax(0,1fr)_380px] lg:items-start xl:grid-cols-[minmax(0,1fr)_420px]">
-          <section className="min-w-0">
+          <section className="flex min-w-0 flex-col gap-4 sm:gap-6">
             <AuctionDetailInfo auction={auction} />
+
+            <div className="w-full max-w-[560px]">
+              <BidRequestPanel
+                auctionStatus={auction.status}
+                pending={pending}
+                requestStatus={requestStatus}
+                requestError={requestError}
+                rejectionReason={rejectionReason}
+                submitBid={submitBid}
+              />
+            </div>
           </section>
 
           <aside className="min-w-0 lg:sticky lg:top-20">
-            <AuctionParticipation
-              auctionStatus={auction.status}
-              bids={bids}
-              historyLoading={historyLoading}
-              historyError={historyError}
-              realtimeStatus={realtimeStatus}
-              lastRealtimeBidId={lastRealtimeBidId}
-              currentUserId={currentUserId}
-              pending={pending}
-              requestStatus={requestStatus}
-              requestError={requestError}
-              rejectionReason={rejectionReason}
-              submitBid={submitBid}
-              refreshHistory={refreshHistory}
-            />
+            <div className="flex min-h-0 flex-col lg:max-h-[640px]">
+              <AuctionBidHistory
+                bids={bids}
+                historyLoading={historyLoading}
+                historyError={historyError}
+                realtimeStatus={realtimeStatus}
+                lastRealtimeBidId={lastRealtimeBidId}
+                currentUserId={currentUserId}
+                refreshHistory={refreshHistory}
+              />
+            </div>
           </aside>
         </div>
       </div>

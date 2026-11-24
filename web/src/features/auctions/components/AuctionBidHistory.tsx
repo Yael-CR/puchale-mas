@@ -1,4 +1,7 @@
+import { useMemo } from 'react'
 import { Gavel, RefreshCw } from 'lucide-react'
+
+import { currencyFormatter } from '../hooks/auctionFormat'
 
 import type { AuctionBid } from '../types/auction'
 import type { RealtimeStatus } from '../hooks/useAuctionBidding'
@@ -13,12 +16,6 @@ interface AuctionBidHistoryProps {
   refreshHistory: () => void | Promise<void>
 }
 
-const currencyFormatter = new Intl.NumberFormat('es-MX', {
-  style: 'currency',
-  currency: 'MXN',
-  maximumFractionDigits: 2,
-})
-
 const dateFormatter = new Intl.DateTimeFormat('es-MX', {
   hour: '2-digit',
   minute: '2-digit',
@@ -26,7 +23,10 @@ const dateFormatter = new Intl.DateTimeFormat('es-MX', {
   month: 'short',
 })
 
-const connectionStatus = {
+const connectionStatus: Record<
+  RealtimeStatus,
+  { label: string; dot: string; text: string }
+> = {
   connecting: {
     label: 'Conectando...',
     dot: 'bg-gray-400 animate-pulse',
@@ -58,8 +58,9 @@ export default function AuctionBidHistory({
   currentUserId,
   refreshHistory,
 }: AuctionBidHistoryProps) {
-  const orderedBids = [...bids].sort(
-    (a, b) => b.sequence_no - a.sequence_no,
+  const orderedBids = useMemo(
+    () => [...bids].sort((a, b) => b.sequence_no - a.sequence_no),
+    [bids],
   )
 
   const connection = connectionStatus[realtimeStatus]
@@ -70,7 +71,7 @@ export default function AuctionBidHistory({
       <div className="flex shrink-0 items-center justify-between gap-3 border-b border-border px-4 py-3">
         <div className="min-w-0">
           <h2 className="truncate text-base font-bold text-text-primary">
-            Actividad de la subasta
+            Historial de pujas
           </h2>
 
           <div
@@ -100,17 +101,18 @@ export default function AuctionBidHistory({
         </button>
       </div>
 
+      {/* Error fijo: siempre visible, fuera de la zona con scroll */}
+      {historyError && (
+        <p
+          role="alert"
+          className="m-3 shrink-0 rounded-lg border border-red-500/20 bg-red-500/5 p-3 text-sm text-red-500"
+        >
+          {historyError}
+        </p>
+      )}
+
       {/* Conversación: única zona con scroll */}
       <div className="max-h-80 min-h-0 flex-auto overflow-y-auto overscroll-contain bg-background/40 p-3 [scrollbar-color:rgb(255_255_255/0.18)_transparent] [scrollbar-width:thin] lg:max-h-none">
-        {historyError && (
-          <p
-            role="alert"
-            className="mb-3 rounded-lg border border-red-500/20 bg-red-500/5 p-3 text-sm text-red-500"
-          >
-            {historyError}
-          </p>
-        )}
-
         {historyLoading && bids.length === 0 ? (
           <p className="py-8 text-center text-sm text-text-secondary">
             Cargando conversación...
@@ -138,8 +140,7 @@ export default function AuctionBidHistory({
           >
             {orderedBids.map((bid) => {
               const isOwnBid =
-                currentUserId !== null &&
-                bid.bidder_id === currentUserId
+                currentUserId !== null && bid.bidder_id === currentUserId
 
               const isRealtimeBid = bid.id === lastRealtimeBidId
 
@@ -163,9 +164,7 @@ export default function AuctionBidHistory({
                       isOwnBid
                         ? 'rounded-tr-sm border-brand/30 bg-brand/10'
                         : 'rounded-tl-sm border-border bg-surface'
-                    } ${
-                      isRealtimeBid ? 'bid-realtime-enter' : ''
-                    }`}
+                    } ${isRealtimeBid ? 'bid-realtime-enter' : ''}`}
                   >
                     <div className="flex items-center justify-between gap-3">
                       <span className="truncate text-xs font-semibold text-text-primary">
@@ -208,9 +207,7 @@ export default function AuctionBidHistory({
         <div className="shrink-0 border-t border-border px-4 py-2">
           <p className="text-center text-xs text-text-secondary">
             {orderedBids.length}{' '}
-            {orderedBids.length === 1
-              ? 'puja aceptada'
-              : 'pujas aceptadas'}
+            {orderedBids.length === 1 ? 'puja aceptada' : 'pujas aceptadas'}
           </p>
         </div>
       )}

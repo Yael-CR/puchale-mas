@@ -39,11 +39,10 @@ export default function AuctionParticipation({
   submitBid,
   refreshHistory,
 }: AuctionParticipationProps) {
-  return (
-    // Una sola columna: vive dentro del panel lateral de la página.
-    // En escritorio ocupa como máximo la altura visible; el panel de puja
-    // siempre queda a la vista y solo el historial se desplaza.
-    <div className="flex min-w-0 flex-col gap-4 lg:max-h-[calc(100vh-6.5rem)]">
+    return (
+    // Móvil: apilado, el historial crece con su contenido.
+    // Escritorio: altura acotada; solo el historial hace scroll.
+    <div className="flex min-w-0 flex-col gap-4 lg:max-h-[640px]">
       <div className="shrink-0">
         <BidRequestPanel
           auctionStatus={auctionStatus}
