@@ -3,6 +3,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 
 import '../../../data/repositories/backend_auth_repository.dart';
+import '../models/backend_auth_response_model.dart';
 
 class BackendAuthViewModel extends ChangeNotifier {
   final BackendAuthRepository _repository;
@@ -10,28 +11,50 @@ class BackendAuthViewModel extends ChangeNotifier {
   BackendAuthViewModel(this._repository);
 
   bool _isLoading = false;
-  Map<String, dynamic>? _userData;
+  BackendAuthResponseModel? _authResponse;
   String? _error;
   int? _statusCode;
 
+  int _requestVersion = 0;
+
   bool get isLoading => _isLoading;
-  Map<String, dynamic>? get userData => _userData;
+  BackendAuthResponseModel? get authResponse => _authResponse;
   String? get error => _error;
   int? get statusCode => _statusCode;
 
+  /// Sincroniza el estado del backend con la sesión de Supabase.
+  Future<void> syncWithSession(bool authenticated) async {
+    if (!authenticated) {
+      clearResult();
+      return;
+    }
+
+    await verifyConnection();
+  }
+
+  /// Consulta el usuario autenticado en FastAPI.
   Future<void> verifyConnection() async {
     if (_isLoading) return;
 
+    final requestVersion = ++_requestVersion;
+
     _isLoading = true;
     _error = null;
-    _userData = null;
+    _authResponse = null;
     _statusCode = null;
+
     notifyListeners();
 
     try {
-      _userData = await _repository.getCurrentUser();
+      final response = await _repository.getCurrentUser();
+
+      if (requestVersion != _requestVersion) return;
+
+      _authResponse = response;
       _statusCode = 200;
     } on DioException catch (exception) {
+      if (requestVersion != _requestVersion) return;
+
       _statusCode = exception.response?.statusCode;
 
       final responseData = exception.response?.data;
@@ -45,17 +68,25 @@ class BackendAuthViewModel extends ChangeNotifier {
             'No fue posible conectar con el servidor.';
       }
     } catch (exception) {
+      if (requestVersion != _requestVersion) return;
+
       _error = 'Error inesperado: $exception';
     } finally {
-      _isLoading = false;
-      notifyListeners();
+      if (requestVersion == _requestVersion) {
+        _isLoading = false;
+        notifyListeners();
+      }
     }
   }
 
+  /// Limpia los datos al cerrar sesión.
   void clearResult() {
-    _userData = null;
+    _requestVersion++;
+    _isLoading = false;
+    _authResponse = null;
     _error = null;
     _statusCode = null;
+
     notifyListeners();
   }
 }

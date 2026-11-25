@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../auth/viewmodels/auth_viewmodel.dart';
 import '../../auth/widgets/backend_connection_card.dart';
+import '../../auctions/views/auctions_view.dart';
 import '../viewmodels/home_viewmodel.dart';
 
 class HomeView extends StatelessWidget {
@@ -58,7 +59,8 @@ class HomeView extends StatelessWidget {
               index: selectedIndex,
               children: [
                 const _HomeContent(),
-                for (var i = 1; i < _sectionTitles.length; i++)
+                const AuctionsView(),
+                for (var i = 2; i < _sectionTitles.length; i++)
                   _ComingSoonView(title: _sectionTitles[i]),
               ],
             ),
@@ -94,7 +96,6 @@ class _HomeContent extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   const SizedBox(height: 48),
-
                   Container(
                     width: 76,
                     height: 76,
@@ -108,9 +109,7 @@ class _HomeContent extends StatelessWidget {
                       size: 42,
                     ),
                   ),
-
                   const SizedBox(height: 24),
-
                   const Text(
                     'PUCHALE+',
                     style: TextStyle(
@@ -119,9 +118,7 @@ class _HomeContent extends StatelessWidget {
                       letterSpacing: 2,
                     ),
                   ),
-
                   const SizedBox(height: 10),
-
                   Text(
                     'Tu próxima oportunidad comienza aquí.',
                     textAlign: TextAlign.center,
@@ -130,9 +127,7 @@ class _HomeContent extends StatelessWidget {
                       fontSize: 14,
                     ),
                   ),
-
                   const SizedBox(height: 40),
-
                   if (authViewModel.isAuthenticated)
                     _AuthenticatedCard(
                       authViewModel: authViewModel,
@@ -141,7 +136,6 @@ class _HomeContent extends StatelessWidget {
                     _SignInCard(
                       authViewModel: authViewModel,
                     ),
-
                   const SizedBox(height: 32),
                 ],
               ),
@@ -183,9 +177,7 @@ class _SignInCard extends StatelessWidget {
               fontWeight: FontWeight.bold,
             ),
           ),
-
           const SizedBox(height: 8),
-
           Text(
             'Inicia sesión para participar en las subastas.',
             textAlign: TextAlign.center,
@@ -194,9 +186,7 @@ class _SignInCard extends StatelessWidget {
               fontSize: 14,
             ),
           ),
-
           const SizedBox(height: 24),
-
           if (authViewModel.error != null) ...[
             Container(
               padding: const EdgeInsets.all(12),
@@ -214,7 +204,6 @@ class _SignInCard extends StatelessWidget {
             ),
             const SizedBox(height: 16),
           ],
-
           SizedBox(
             height: 52,
             child: ElevatedButton.icon(
@@ -277,7 +266,7 @@ class _AuthenticatedCard extends StatelessWidget {
 
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: const Color(0xFF171717),
         borderRadius: BorderRadius.circular(20),
@@ -286,15 +275,14 @@ class _AuthenticatedCard extends StatelessWidget {
         ),
       ),
       child: Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
           const Icon(
             Icons.account_circle_rounded,
             color: AppTheme.brand,
             size: 58,
           ),
-
           const SizedBox(height: 16),
-
           const Text(
             '¡Bienvenido!',
             style: TextStyle(
@@ -302,9 +290,7 @@ class _AuthenticatedCard extends StatelessWidget {
               fontWeight: FontWeight.bold,
             ),
           ),
-
           const SizedBox(height: 8),
-
           Text(
             displayName.toString(),
             textAlign: TextAlign.center,
@@ -313,9 +299,7 @@ class _AuthenticatedCard extends StatelessWidget {
               fontWeight: FontWeight.w600,
             ),
           ),
-
           const SizedBox(height: 4),
-
           Text(
             email,
             textAlign: TextAlign.center,
@@ -324,9 +308,7 @@ class _AuthenticatedCard extends StatelessWidget {
               fontSize: 13,
             ),
           ),
-
-          const SizedBox(height: 24),
-
+          const SizedBox(height: 20),
           SizedBox(
             width: double.infinity,
             height: 48,
@@ -355,9 +337,7 @@ class _AuthenticatedCard extends StatelessWidget {
               label: const Text('Cerrar sesión'),
             ),
           ),
-
           const SizedBox(height: 24),
-
           const BackendConnectionCard(),
         ],
       ),

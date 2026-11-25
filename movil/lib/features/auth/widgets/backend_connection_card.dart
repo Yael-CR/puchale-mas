@@ -1,6 +1,4 @@
 
-import 'dart:convert';
-
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -14,6 +12,8 @@ class BackendConnectionCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Consumer<BackendAuthViewModel>(
       builder: (context, viewModel, child) {
+        final authResponse = viewModel.authResponse;
+
         return Container(
           width: double.infinity,
           padding: const EdgeInsets.all(18),
@@ -106,7 +106,7 @@ class BackendConnectionCard extends StatelessWidget {
                 ),
               ],
 
-              if (viewModel.userData != null) ...[
+              if (authResponse != null) ...[
                 const SizedBox(height: 12),
                 const Row(
                   children: [
@@ -125,23 +125,26 @@ class BackendConnectionCard extends StatelessWidget {
                     ),
                   ],
                 ),
-                const SizedBox(height: 10),
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: Colors.black,
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: SelectableText(
-                    const JsonEncoder.withIndent('  ')
-                        .convert(viewModel.userData),
-                    style: const TextStyle(
-                      fontSize: 11,
-                      color: Colors.white70,
-                      fontFamily: 'monospace',
-                    ),
-                  ),
+
+                const SizedBox(height: 12),
+
+                _ResponseRow(
+                  label: 'Autenticado',
+                  value: authResponse.authenticated ? 'Sí' : 'No',
+                ),
+
+                const SizedBox(height: 8),
+
+                _ResponseRow(
+                  label: 'ID de usuario',
+                  value: authResponse.user.id,
+                ),
+
+                const SizedBox(height: 8),
+
+                _ResponseRow(
+                  label: 'Correo electrónico',
+                  value: authResponse.user.email,
                 ),
               ],
 
@@ -159,6 +162,49 @@ class BackendConnectionCard extends StatelessWidget {
           ),
         );
       },
+    );
+  }
+}
+
+class _ResponseRow extends StatelessWidget {
+  final String label;
+  final String value;
+
+  const _ResponseRow({
+    required this.label,
+    required this.value,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.black,
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            style: const TextStyle(
+              color: Colors.white54,
+              fontSize: 11,
+            ),
+          ),
+          const SizedBox(height: 4),
+          SelectableText(
+            value,
+            style: const TextStyle(
+              color: Colors.white70,
+              fontSize: 12,
+              fontFamily: 'monospace',
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
