@@ -47,4 +47,34 @@ class AuctionService {
 
     return Map<String, dynamic>.from(data);
   }
+
+
+
+
+  Future<List<Map<String, dynamic>>> getAuctionBids(
+    String auctionId,
+  ) async {
+    final response = await _apiClient.dio.get(
+      '/api/auctions/$auctionId/bids',
+    );
+
+    final data = response.data;
+
+    if (data is! List) {
+      throw const FormatException(
+        'La respuesta del historial de pujas no es válida.',
+      );
+    }
+
+    return data.map((item) {
+      if (item is! Map) {
+        throw const FormatException(
+          'Se recibió una puja con formato inválido.',
+        );
+      }
+
+      return Map<String, dynamic>.from(item);
+    }).toList();
+  }
+
 }

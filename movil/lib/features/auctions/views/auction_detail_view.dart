@@ -1,9 +1,11 @@
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../data/repositories/auction_repository.dart';
 import '../viewmodels/auction_detail_viewmodel.dart';
+import '../viewmodels/auction_bidding_viewmodel.dart';
 import '../widgets/auction_detail_content.dart';
 
 class AuctionDetailView extends StatelessWidget {
@@ -17,12 +19,24 @@ class AuctionDetailView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final repository = context.read<AuctionRepository>();
+    final supabase = context.read<SupabaseClient>();
 
-    return ChangeNotifierProvider(
-      create: (_) => AuctionDetailViewModel(
-        repository,
-        auctionId,
-      )..loadAuction(),
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider<AuctionDetailViewModel>(
+          create: (_) => AuctionDetailViewModel(
+            repository,
+            auctionId,
+          )..loadAuction(),
+        ),
+        ChangeNotifierProvider<AuctionBiddingViewModel>(
+          create: (_) => AuctionBiddingViewModel(
+            repository: repository,
+            supabase: supabase,
+            auctionId: auctionId,
+          )..initialize(),
+        ),
+      ],
       child: const _AuctionDetailBody(),
     );
   }
