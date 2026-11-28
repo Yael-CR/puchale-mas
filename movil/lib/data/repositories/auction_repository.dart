@@ -1,3 +1,4 @@
+
 import '../../features/auctions/models/auction_model.dart';
 import '../services/auction_service.dart';
 
@@ -12,5 +13,15 @@ class AuctionRepository {
     return response.map((json) {
       return AuctionModel.fromJson(json);
     }).toList();
+  }
+
+  Future<AuctionModel> getAuctionById(
+    String auctionId,
+  ) async {
+    final response = await _auctionService.getAuctionById(
+      auctionId,
+    );
+
+    return AuctionModel.fromJson(response);
   }
 }

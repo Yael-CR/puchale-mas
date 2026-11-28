@@ -29,4 +29,22 @@ class AuctionService {
       return Map<String, dynamic>.from(item);
     }).toList();
   }
+
+  Future<Map<String, dynamic>> getAuctionById(
+    String auctionId,
+  ) async {
+    final response = await _apiClient.dio.get(
+      '/api/auction-catalog/$auctionId',
+    );
+
+    final data = response.data;
+
+    if (data is! Map) {
+      throw const FormatException(
+        'La respuesta del detalle de la subasta no es válida.',
+      );
+    }
+
+    return Map<String, dynamic>.from(data);
+  }
 }

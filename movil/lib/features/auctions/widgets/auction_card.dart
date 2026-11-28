@@ -1,4 +1,6 @@
+
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 import '../models/auction_model.dart';
 
@@ -61,84 +63,89 @@ class AuctionCard extends StatelessWidget {
 
     final theme = Theme.of(context);
 
-    return Container(
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surface,
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(
-          color: theme.dividerColor.withValues(alpha: 0.15),
+    return GestureDetector(
+      onTap: () {
+        context.push('/subastas/${auction.id}');
+      },
+      child: Container(
+        decoration: BoxDecoration(
+          color: theme.colorScheme.surface,
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(
+            color: theme.dividerColor.withValues(alpha: 0.15),
+          ),
         ),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _ProductImage(imageUrl: imageUrl),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Wrap(
-                    spacing: 6,
-                    runSpacing: 6,
-                    children: [
-                      _InfoChip(
-                        label: _typeLabel,
-                        color: _brandColor,
+        child: Padding(
+          padding: const EdgeInsets.all(12),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _ProductImage(imageUrl: imageUrl),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Wrap(
+                      spacing: 6,
+                      runSpacing: 6,
+                      children: [
+                        _InfoChip(
+                          label: _typeLabel,
+                          color: _brandColor,
+                        ),
+                        _InfoChip(
+                          label: _statusLabel,
+                          color: _statusColor,
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 10),
+                    Text(
+                      auction.product.title,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w700,
                       ),
-                      _InfoChip(
-                        label: _statusLabel,
-                        color: _statusColor,
+                    ),
+                    if (auction.product.condition != null &&
+                        auction.product.condition!.isNotEmpty) ...[
+                      const SizedBox(height: 4),
+                      Text(
+                        auction.product.condition!,
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: theme.colorScheme.onSurface
+                              .withValues(alpha: 0.6),
+                        ),
                       ),
                     ],
-                  ),
-                  const SizedBox(height: 10),
-                  Text(
-                    auction.product.title,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: theme.textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                  if (auction.product.condition != null &&
-                      auction.product.condition!.isNotEmpty) ...[
-                    const SizedBox(height: 4),
+                    const SizedBox(height: 12),
                     Text(
-                      auction.product.condition!,
+                      'Precio actual',
                       style: theme.textTheme.bodySmall?.copyWith(
                         color: theme.colorScheme.onSurface
                             .withValues(alpha: 0.6),
                       ),
                     ),
+                    const SizedBox(height: 3),
+                    Text(
+                      _formatMoney(auction.currentPrice),
+                      style: theme.textTheme.titleLarge?.copyWith(
+                        color: _brandColor,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    const SizedBox(height: 5),
+                    Text(
+                      'Incremento: ${_formatMoney(auction.incrementAmount)}',
+                      style: theme.textTheme.bodySmall,
+                    ),
                   ],
-                  const SizedBox(height: 12),
-                  Text(
-                    'Precio actual',
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: theme.colorScheme.onSurface
-                          .withValues(alpha: 0.6),
-                    ),
-                  ),
-                  const SizedBox(height: 3),
-                  Text(
-                    _formatMoney(auction.currentPrice),
-                    style: theme.textTheme.titleLarge?.copyWith(
-                      color: _brandColor,
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
-                  const SizedBox(height: 5),
-                  Text(
-                    'Incremento: ${_formatMoney(auction.incrementAmount)}',
-                    style: theme.textTheme.bodySmall,
-                  ),
-                ],
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
