@@ -21,8 +21,8 @@ class AuctionBidModel {
       id: json['id'] as String,
       auctionId: json['auction_id'] as String,
       bidderId: json['bidder_id'] as String,
-      amount: (json['amount'] as num).toDouble(),
-      sequenceNo: (json['sequence_no'] as num).toInt(),
+      amount: double.parse(json['amount'].toString()),
+      sequenceNo: int.parse(json['sequence_no'].toString()),
       acceptedAt: DateTime.parse(json['accepted_at'] as String),
     );
   }

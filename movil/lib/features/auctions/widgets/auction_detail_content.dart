@@ -9,10 +9,12 @@ import 'detail/auction_price_card.dart';
 
 class AuctionDetailContent extends StatelessWidget {
   final AuctionModel auction;
+  final Widget biddingSection;
 
   const AuctionDetailContent({
     super.key,
     required this.auction,
+    required this.biddingSection,
   });
 
   static const Color _brandColor = Color(0xFFA3FF00);
@@ -178,6 +180,10 @@ class AuctionDetailContent extends StatelessWidget {
                   ],
                 ),
               ),
+
+              const SizedBox(height: 28),
+
+              biddingSection,
             ]),
           ),
         ),

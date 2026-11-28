@@ -7,6 +7,7 @@ import '../../../data/repositories/auction_repository.dart';
 import '../viewmodels/auction_detail_viewmodel.dart';
 import '../viewmodels/auction_bidding_viewmodel.dart';
 import '../widgets/auction_detail_content.dart';
+import '../widgets/bidding/auction_bid_history.dart';
 
 class AuctionDetailView extends StatelessWidget {
   final String auctionId;
@@ -52,30 +53,44 @@ class _AuctionDetailBody extends StatelessWidget {
         title: const Text('Detalle de subasta'),
       ),
       body: Consumer<AuctionDetailViewModel>(
-        builder: (context, viewModel, child) {
-          if (viewModel.isLoading &&
-              viewModel.auction == null) {
+        builder: (context, detailViewModel, child) {
+          if (detailViewModel.isLoading &&
+              detailViewModel.auction == null) {
             return const Center(
               child: CircularProgressIndicator(),
             );
           }
 
-          if (viewModel.error != null &&
-              viewModel.auction == null) {
+          if (detailViewModel.error != null &&
+              detailViewModel.auction == null) {
             return _ErrorView(
-              message: viewModel.error!,
-              onRetry: viewModel.retry,
+              message: detailViewModel.error!,
+              onRetry: detailViewModel.retry,
             );
           }
 
-          if (viewModel.auction == null) {
+          if (detailViewModel.auction == null) {
             return const Center(
               child: Text('No se encontró la subasta.'),
             );
           }
 
-          return AuctionDetailContent(
-            auction: viewModel.auction!,
+          final auction = detailViewModel.auction!;
+
+          return Consumer<AuctionBiddingViewModel>(
+            builder: (context, biddingViewModel, child) {
+              return AuctionDetailContent(
+                auction: auction,
+                biddingSection: AuctionBidHistory(
+                  bids: biddingViewModel.bids,
+                  currentUserId: biddingViewModel.currentUserId,
+                  currency: auction.currency,
+                  isLoading: biddingViewModel.historyLoading,
+                  error: biddingViewModel.historyError,
+                  onRefresh: biddingViewModel.refreshHistory,
+                ),
+              );
+            },
           );
         },
       ),

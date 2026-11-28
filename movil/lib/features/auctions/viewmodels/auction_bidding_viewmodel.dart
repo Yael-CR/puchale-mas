@@ -58,14 +58,25 @@ class AuctionBiddingViewModel extends ChangeNotifier {
   }
 
   Future<void> initialize() async {
+    debugPrint('========== BID INITIALIZATION ==========');
+    debugPrint('Auction ID: $auctionId');
+
     await _subscribeToBids();
     await refreshHistory();
+
+    debugPrint('========================================');
   }
 
   Future<void> refreshHistory() async {
     if (_disposed ||
         auctionId.isEmpty ||
         _historyRequestInProgress) {
+      debugPrint(
+        'BID HISTORY: solicitud omitida. '
+        'Disposed: $_disposed, '
+        'Auction ID vacío: ${auctionId.isEmpty}, '
+        'En progreso: $_historyRequestInProgress',
+      );
       return;
     }
 
@@ -76,6 +87,10 @@ class AuctionBiddingViewModel extends ChangeNotifier {
       _notify();
     }
 
+    debugPrint('========== BID HISTORY REQUEST ==========');
+    debugPrint('Auction ID: $auctionId');
+    debugPrint('Usuario: $currentUserId');
+
     try {
       final result = await _repository.getAuctionBids(
         auctionId,
@@ -83,12 +98,24 @@ class AuctionBiddingViewModel extends ChangeNotifier {
 
       if (_disposed) return;
 
+      debugPrint('Respuesta recibida correctamente.');
+      debugPrint('Cantidad de pujas: ${result.length}');
+
       _mergeBids(result);
 
       _historyError = null;
       _hasLoadedHistory = true;
-    } catch (exception) {
+
+      debugPrint('Pujas integradas correctamente.');
+      debugPrint('Total en pantalla: ${_bids.length}');
+    } catch (exception, stackTrace) {
       if (_disposed) return;
+
+      debugPrint('========== BID HISTORY ERROR ==========');
+      debugPrint('Tipo: ${exception.runtimeType}');
+      debugPrint('Error: $exception');
+      debugPrint('StackTrace: $stackTrace');
+      debugPrint('=======================================');
 
       _historyError =
           'No fue posible actualizar el historial de pujas.';
@@ -99,6 +126,8 @@ class AuctionBiddingViewModel extends ChangeNotifier {
         _historyLoading = false;
         _notify();
       }
+
+      debugPrint('========== BID HISTORY FINISHED ==========');
     }
   }
 
@@ -109,6 +138,9 @@ class AuctionBiddingViewModel extends ChangeNotifier {
     _notify();
 
     try {
+      debugPrint('========== BID REALTIME ==========');
+      debugPrint('Suscribiendo a subasta: $auctionId');
+
       final channel = _supabase.channel(
         'auction-bids-$auctionId',
       );
@@ -129,11 +161,18 @@ class AuctionBiddingViewModel extends ChangeNotifier {
               if (_disposed) return;
 
               try {
+                debugPrint(
+                  'Nueva puja recibida por Realtime.',
+                );
+
                 final newBid = AuctionBidModel.fromJson(
                   payload.newRecord,
                 );
 
                 if (newBid.auctionId != auctionId) {
+                  debugPrint(
+                    'Puja ignorada: no corresponde a esta subasta.',
+                  );
                   return;
                 }
 
@@ -142,8 +181,22 @@ class AuctionBiddingViewModel extends ChangeNotifier {
                 _lastRealtimeBidId = newBid.id;
                 _historyError = null;
 
+                debugPrint(
+                  'Puja integrada. Secuencia: ${newBid.sequenceNo}',
+                );
+
                 _notify();
-              } catch (_) {
+              } catch (exception, stackTrace) {
+                debugPrint(
+                  '========== REALTIME BID ERROR ==========',
+                );
+                debugPrint('Tipo: ${exception.runtimeType}');
+                debugPrint('Error: $exception');
+                debugPrint('StackTrace: $stackTrace');
+                debugPrint(
+                  '========================================',
+                );
+
                 _historyError =
                     'Se recibió una actualización de puja inválida.';
                 _notify();
@@ -153,12 +206,19 @@ class AuctionBiddingViewModel extends ChangeNotifier {
           .subscribe((status, [error]) {
             if (_disposed) return;
 
+            debugPrint(
+              'Realtime status: $status',
+            );
+
+            if (error != null) {
+              debugPrint('Realtime error: $error');
+            }
+
             switch (status) {
               case RealtimeSubscribeStatus.subscribed:
                 _realtimeStatus =
                     AuctionRealtimeStatus.connected;
 
-                // Sincronizar al recuperar la conexión.
                 refreshHistory();
                 break;
 
@@ -176,7 +236,13 @@ class AuctionBiddingViewModel extends ChangeNotifier {
 
             _notify();
           });
-    } catch (_) {
+    } catch (exception, stackTrace) {
+      debugPrint('========== REALTIME CONNECTION ERROR ==========');
+      debugPrint('Tipo: ${exception.runtimeType}');
+      debugPrint('Error: $exception');
+      debugPrint('StackTrace: $stackTrace');
+      debugPrint('================================================');
+
       if (_disposed) return;
 
       _realtimeStatus =
