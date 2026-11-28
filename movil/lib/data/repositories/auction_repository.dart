@@ -1,8 +1,7 @@
 
 import '../../features/auctions/models/auction_model.dart';
-import '../services/auction_service.dart';
 import '../../features/auctions/models/auction_bid_model.dart';
-
+import '../services/auction_service.dart';
 
 class AuctionRepository {
   final AuctionService _auctionService;
@@ -27,8 +26,6 @@ class AuctionRepository {
     return AuctionModel.fromJson(response);
   }
 
-
-
   Future<List<AuctionBidModel>> getAuctionBids(
     String auctionId,
   ) async {
@@ -41,4 +38,23 @@ class AuctionRepository {
     }).toList();
   }
 
+  // Crear solicitud de puja.
+  Future<Map<String, dynamic>> createBidRequest(
+    String auctionId,
+    String idempotencyKey,
+  ) async {
+    return await _auctionService.createBidRequest(
+      auctionId,
+      idempotencyKey,
+    );
+  }
+
+  // Consultar estado de una solicitud.
+  Future<Map<String, dynamic>> getBidRequestStatus(
+    String requestId,
+  ) async {
+    return await _auctionService.getBidRequestStatus(
+      requestId,
+    );
+  }
 }

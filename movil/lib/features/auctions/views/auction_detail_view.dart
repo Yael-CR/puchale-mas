@@ -8,6 +8,7 @@ import '../viewmodels/auction_detail_viewmodel.dart';
 import '../viewmodels/auction_bidding_viewmodel.dart';
 import '../widgets/auction_detail_content.dart';
 import '../widgets/bidding/auction_bid_history.dart';
+import '../widgets/bidding/auction_bid_panel.dart';
 
 class AuctionDetailView extends StatelessWidget {
   final String auctionId;
@@ -81,13 +82,20 @@ class _AuctionDetailBody extends StatelessWidget {
             builder: (context, biddingViewModel, child) {
               return AuctionDetailContent(
                 auction: auction,
-                biddingSection: AuctionBidHistory(
-                  bids: biddingViewModel.bids,
-                  currentUserId: biddingViewModel.currentUserId,
-                  currency: auction.currency,
-                  isLoading: biddingViewModel.historyLoading,
-                  error: biddingViewModel.historyError,
-                  onRefresh: biddingViewModel.refreshHistory,
+                biddingSection: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    const AuctionBidPanel(),
+
+                    AuctionBidHistory(
+                      bids: biddingViewModel.bids,
+                      currentUserId: biddingViewModel.currentUserId,
+                      currency: auction.currency,
+                      isLoading: biddingViewModel.historyLoading,
+                      error: biddingViewModel.historyError,
+                      onRefresh: biddingViewModel.refreshHistory,
+                    ),
+                  ],
                 ),
               );
             },

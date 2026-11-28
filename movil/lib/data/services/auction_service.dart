@@ -48,9 +48,6 @@ class AuctionService {
     return Map<String, dynamic>.from(data);
   }
 
-
-
-
   Future<List<Map<String, dynamic>>> getAuctionBids(
     String auctionId,
   ) async {
@@ -77,4 +74,45 @@ class AuctionService {
     }).toList();
   }
 
+  // Crear solicitud de puja.
+  Future<Map<String, dynamic>> createBidRequest(
+    String auctionId,
+    String idempotencyKey,
+  ) async {
+    final response = await _apiClient.dio.post(
+      '/api/auctions/$auctionId/bids',
+      data: {
+        'idempotency_key': idempotencyKey,
+      },
+    );
+
+    final data = response.data;
+
+    if (data is! Map) {
+      throw const FormatException(
+        'La respuesta de la solicitud de puja no es válida.',
+      );
+    }
+
+    return Map<String, dynamic>.from(data);
+  }
+
+  // Consultar estado de una solicitud de puja.
+  Future<Map<String, dynamic>> getBidRequestStatus(
+    String requestId,
+  ) async {
+    final response = await _apiClient.dio.get(
+      '/api/auctions/bid-requests/$requestId',
+    );
+
+    final data = response.data;
+
+    if (data is! Map) {
+      throw const FormatException(
+        'La respuesta del estado de la puja no es válida.',
+      );
+    }
+
+    return Map<String, dynamic>.from(data);
+  }
 }
